@@ -1,57 +1,32 @@
-# Cache-Aware Matrix Transposition
+# I/O Efficient Algorithms
 
-Implementation of a cache-aware matrix transposition algorithm with I/O operation simulation for large matrices that don't fit in memory.
+Implementation of various I/O efficient algorithms for external memory computation with simulation framework for analyzing performance on large datasets that don't fit in memory.
 
-## Problem Description
+## Currently Implemented Algorithms
 
-### Matrix Transposition Task
+- **Matrix Transposition**: Cache-aware and cache-oblivious algorithms for transposing large square matrices
+- **External Memory Sorting**: External merge sort algorithm for sorting datasets larger than memory
+- *More algorithms coming soon...*
 
-- Need to transform a square matrix `m x m`: element `(i, j)` is swapped with element `(j, i)`
-- Input: large matrix that doesn't fit in memory; stored in _row-major order_ (row-wise)
-- Condition: even a single row or column doesn't fit entirely in internal memory
+📖 **Algorithm Documentation:**
+- **[Matrix Transpose Algorithms →](algorithms/transpose/README.md)**
+- **[External Memory Sorting →](algorithms/sorting/README.md)**
 
-### Naive Algorithm Problem
+## I/O Model and Framework
 
-- **Straightforward algorithm**: traverse matrix row-wise, for each element `(i, j)` find `(j, i)` and swap them
-- **I/O behavior**: 
-  - First half: reading in storage order → `n/B` I/O operations
-  - Second half: accessing `(j, i)` requires column-wise scanning → `n` I/O operations
-- **Conclusion**: naive algorithm requires about `n` I/O operations and is inefficient
+### External Memory Model
 
-## Cache-Aware Algorithm
+- **Large datasets**: Data structures too large to fit in internal memory
+- **Two-level hierarchy**: Fast internal memory (size M) and slow external storage
+- **Block-based I/O**: Data transferred in blocks of size B between levels
+- **Goal**: Minimize the number of I/O operations to achieve optimal performance
 
-### Main Idea
+### Performance Metrics
 
-Break the matrix into square tiles of size `t x t`, choosing `t` so that **two tiles fit completely in memory**.
-
-### Tile Size Selection
-
-```
-t = sqrt(M) - B
-```
-
-Where:
-- `M` - available memory size
-- `B` - disk block size
-- Condition: `2*(t^2 + 2*B*t) <= M` (accounting for "protruding" blocks in row-major storage)
-
-### Algorithm
-
-1. **Tile partitioning**: matrix is divided into square tiles of size `t x t`
-2. **Tile pair processing**: for each pair of tiles `(i,j)` and `(j,i)`:
-   - Read both tiles into memory
-   - Perform transposition in memory
-   - Write result back to disk
-3. **In-place transposition**: 
-   - Diagonal tiles: transpose in-place
-   - Symmetric pairs: swap and transpose
-
-### I/O Complexity Analysis
-
-- **Number of tile pairs**: `n / (t^2)`, where `n = m * m`
-- **Operations per pair**: `4t * (t/B + 2)`
-- **Final complexity**: `O(n/B + n/t)`
-- **With tall-cache condition**: `O(n/B)` - optimal bound!
+- **I/O complexity**: Number of block transfers between memory and storage
+- **Space complexity**: Amount of internal memory used
+- **Optimal bounds**: Theoretical lower bounds for specific problems
+- **Cache-oblivious**: Algorithms that work optimally without knowing M and B
 
 ## Project Structure
 
@@ -59,16 +34,31 @@ Where:
 .
 ├── algorithms/
 │   ├── __init__.py
-│   └── transpose_cache_aware.py    # Main algorithm
+│   ├── [future README files...]      # Algorithm category documentation
+│   ├── sorting/                      # External memory sorting algorithms
+│   │   ├── __init__.py
+│   │   ├── README.md                 # Sorting algorithm documentation  
+│   │   └── external_merge_sort.py    # External merge sort implementation
+│   ├── transpose/                    # Matrix transpose algorithms
+│   │   ├── __init__.py
+│   │   ├── README.md                 # Matrix transpose documentation
+│   │   ├── cache_aware.py            # Cache-aware matrix transpose
+│   │   └── cache_oblivious.py        # Cache-oblivious matrix transpose
+│   └── [future algorithms...]        # Additional I/O efficient algorithms
 ├── io_simulator/
 │   ├── __init__.py
-│   └── io_simulator.py             # I/O operations simulator
+│   ├── README.md                     # IOSimulator documentation
+│   └── io_simulator.py               # Core I/O operations simulator
 ├── tests/
-│   ├── test_io_simulator.py        # Tests for IOSimulator
-│   └── test_transpose.py           # Tests for transposition algorithm
-├── Makefile                        # Task automation
-├── algorithm_analysis.md           # Detailed algorithm analysis
-└── README.md                       # This file
+│   ├── test_io_simulator.py          # Tests for I/O simulator
+│   ├── test_external_merge_sort.py   # Tests for external merge sort
+│   ├── test_transpose_cache_aware.py # Tests for cache-aware transpose
+│   ├── test_transpose_cache_oblivious.py # Tests for cache-oblivious transpose
+│   └── [future test files...]        # Tests for additional algorithms
+├── Makefile                          # Build and test automation
+├── CLAUDE.md                         # AI assistant guidance
+├── pyproject.toml                    # Python project configuration
+└── README.md                         # This documentation
 ```
 
 ## Installation and Usage
@@ -84,78 +74,52 @@ Where:
 make install
 # or
 pip install numpy
+
+# For testing (optional)
+pip install pytest
 ```
 
 ### Quick Start
 
 ```bash
-# Run built-in example
-make example
+# Run matrix transpose examples
+make example                    # Cache-aware algorithm
+make example-cache-oblivious    # Cache-oblivious algorithm
 
 # Run all tests
-make test
+make test                       # All algorithms and simulator
 
-# Run additional examples
-make examples
+# Run specific test suites
+make test-transpose            # Matrix transpose tests
+make test-io                   # I/O simulator tests
+
+# Additional examples
+make examples                   # All available examples
 ```
 
-### Programmatic Usage
+### Basic Usage
 
 ```python
 import numpy as np
 from io_simulator import IOSimulator
-from algorithms import transpose_cache_aware
 
-# Create matrix
-A = np.arange(16).reshape(4, 4)
+# Create a large matrix that doesn't fit in memory
+matrix = np.arange(16).reshape(4, 4)
 
-# Create I/O simulator with parameters:
-# - block_size=2: disk block size
-# - memory_size=8: available memory size
-sim = IOSimulator(A, block_size=2, memory_size=8)
+# Initialize I/O simulator
+simulator = IOSimulator(matrix, block_size=2, memory_size=8)
 
-# Perform transposition
-result, io_count = transpose_cache_aware(sim)
-
-print(f"Transposition result:")
-print(result)
-print(f"Number of I/O operations: {io_count}")
+# Use with algorithms (see algorithms/README.md for details)
 ```
 
-## API
+## Documentation
 
-### IOSimulator
+### Core Framework
+- **[I/O Simulator Framework](io_simulator/README.md)** - Detailed IOSimulator documentation with LRU cache management
 
-Class for simulating I/O operations with caching:
-
-```python
-sim = IOSimulator(matrix, block_size, memory_size)
-```
-
-**Parameters:**
-- `matrix`: NumPy array (matrix)
-- `block_size`: disk block size
-- `memory_size`: available memory size
-
-**Methods:**
-- `get_submatrix(i_start, i_end, j_start, j_end)`: get submatrix
-- `set_submatrix(i, j, submatrix)`: set submatrix
-- `flush_memory()`: flush cache to disk
-
-### transpose_cache_aware
-
-Cache-aware transposition function:
-
-```python
-result, io_count = transpose_cache_aware(sim)
-```
-
-**Parameters:**
-- `sim`: IOSimulator instance
-
-**Returns:**
-- `result`: transposed matrix
-- `io_count`: number of I/O operations performed
+### Algorithms
+- **[Matrix Transpose Algorithms](algorithms/transpose/README.md)** - Cache-aware and cache-oblivious transpose implementations
+- **[External Memory Sorting](algorithms/sorting/README.md)** - External merge sort algorithm and analysis
 
 ## Testing
 
@@ -165,13 +129,12 @@ result, io_count = transpose_cache_aware(sim)
 # All tests
 make test
 
-# IOSimulator tests only
-make test-io
+# Specific test categories
+make test-io                   # I/O simulator tests
+make test-transpose           # Matrix transpose tests
+make test-sorting             # External merge sort tests
 
-# Transposition tests only
-make test-transpose
-
-# Quick check
+# Quick verification
 make quick-test
 ```
 
@@ -185,88 +148,48 @@ pip install coverage
 make test-coverage
 ```
 
-## Usage Examples
+## Examples
 
-### Different Matrix Sizes
+### Matrix Transposition Examples
 
 ```bash
-# Small matrix (2x2)
-make example-small
+# Cache-aware algorithm examples
+make example          # Default 4x4 matrix
+make example-small    # Small 2x2 matrix
+make example-large    # Large 8x8 matrix
 
-# Large matrix (8x8)
-make example-large
+# Cache-oblivious algorithm examples  
+make example-cache-oblivious  # Recursive approach
 
-# All examples
-make examples
+# Run all examples
+make examples         # All implemented algorithms
 ```
 
-### Performance Analysis
+### External Sorting Examples
 
-```python
+```bash
+# Test external merge sort on different dataset sizes
+python -c "
 import numpy as np
 from io_simulator import IOSimulator
-from algorithms import transpose_cache_aware
-import math
+from algorithms.sorting import external_merge_sort
 
-# Test different memory parameters
-test_cases = [
-    (16, 2, 'Small memory'),
-    (32, 2, 'Medium memory'),
-    (64, 4, 'Large memory'),
-    (128, 8, 'Very large memory')
-]
+# Test with different configurations
+test_array = np.random.randint(0, 100, 20)
+print(f'Original: {test_array}')
 
-for memory_size, block_size, description in test_cases:
-    print(f'{description}: M={memory_size}, B={block_size}')
-    
-    # Calculate tile size
-    tile_size = max(1, int(math.sqrt(memory_size)) - block_size)
-    print(f'  Tile size: t = sqrt({memory_size}) - {block_size} = {tile_size}')
-    
-    # Create test matrix
-    A = np.arange(16).reshape(4, 4)
-    sim = IOSimulator(A, block_size=block_size, memory_size=memory_size)
-    
-    result, io_count = transpose_cache_aware(sim)
-    
-    print(f'  I/O operations: {io_count}')
-    print(f'  Theoretical O(n/B) bound: ~{A.shape[0] * A.shape[1] // block_size}')
-    print()
+sim = IOSimulator(test_array, block_size=4, memory_size=8)
+sorted_result, io_count = external_merge_sort(sim, len(test_array))
+
+print(f'Sorted: {sorted_result}')
+print(f'I/O operations: {io_count}')
+"
 ```
 
-## Performance Results
+### Future Algorithm Examples
 
-| Memory (M) | Block (B) | Tile (t) | I/O Operations | Matrix | O(n/B) Bound |
-|------------|-----------|----------|----------------|--------|--------------|
-| 16         | 2         | 2        | 16             | 4x4    | ~8            |
-| 32         | 2         | 3        | 24             | 4x4    | ~8            |
-| 64         | 4         | 4        | 8              | 4x4    | ~4            |
-| 128        | 8         | 3        | 16             | 4x4    | ~2            |
-
-## Theoretical Foundation
-
-### Cache-Aware Algorithm Advantages
-
-1. **Optimal I/O complexity**: `O(n/B)` instead of `O(n)` for naive algorithm
-2. **Efficient memory usage**: two tiles fit in memory simultaneously
-3. **Architecture awareness**: algorithm adapts to system parameters (M, B)
-
-### Limitations
-
-1. **Requires parameter knowledge**: need to know memory size M and block size B
-2. **Square matrices only**: algorithm works only with square matrices
-3. **In-place operations**: modifies the original matrix
-
-## Additional Materials
-
-- [Detailed algorithm analysis](algorithm_analysis.md)
-- [Algorithm source code](algorithms/transpose_cache_aware.py)
-- [Tests and examples](tests/)
+*As more algorithms are added, corresponding examples will be available through make commands.*
 
 ## License
 
 MIT License
-
-## Author
-
-Implementation of cache-aware matrix transposition algorithm for external memory algorithms course.

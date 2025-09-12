@@ -1,6 +1,6 @@
 # Makefile for transpose_cache_aware project
 
-.PHONY: help test test-io test-transpose example example-small example-large examples clean install
+.PHONY: help test test-io test-transpose test-sorting example example-small example-large example-sorting examples clean install
 
 # Default target
 help:
@@ -9,9 +9,13 @@ help:
 	@echo "  test        - Run all tests"
 	@echo "  test-io     - Run IOSimulator tests only"
 	@echo "  test-transpose - Run transpose tests only"
+	@echo "  test-sorting - Run sorting tests only"
+	@echo "  test-cache-oblivious - Run cache-oblivious tests only"
 	@echo "  example     - Run the built-in transpose example (4x4 matrix)"
 	@echo "  example-small - Run small matrix example (2x2)"
 	@echo "  example-large - Run large matrix example (8x8)"
+	@echo "  example-cache-oblivious - Run cache-oblivious algorithm example"
+	@echo "  example-sorting - Run external memory sorting example"
 	@echo "  examples    - Run all examples"
 	@echo "  clean       - Clean up __pycache__ directories"
 	@echo "  install     - Install dependencies"
@@ -19,34 +23,54 @@ help:
 # Run all tests
 test:
 	@echo "Running all tests..."
-	python -m unittest tests.test_io_simulator tests.test_transpose -v
+	pytest tests/ -v
+
+# Run cache-oblivious tests only
+test-cache-oblivious:
+	@echo "Running cache-oblivious tests..."
+	pytest tests/test_transpose_cache_oblivious.py -v
+
+# Run cache-oblivious algorithm example
+example-cache-oblivious:
+	@echo "Running cache-oblivious algorithm example..."
+	python algorithms/transpose/cache_oblivious.py
 
 # Run IOSimulator tests only
 test-io:
 	@echo "Running IOSimulator tests..."
-	python -m unittest tests.test_io_simulator -v
+	pytest tests/test_io_simulator.py -v
 
 # Run transpose tests only
 test-transpose:
 	@echo "Running transpose tests..."
-	python -m unittest tests.test_transpose -v
+	pytest tests/test_transpose_cache_aware.py tests/test_transpose_cache_oblivious.py -v
+
+# Run sorting tests only
+test-sorting:
+	@echo "Running sorting tests..."
+	pytest tests/test_external_merge_sort.py -v
 
 # Run the transpose example (built-in example in transpose_cache_aware.py)
 example:
 	@echo "Running transpose example..."
-	python algorithms/transpose_cache_aware.py
+	python algorithms/transpose/cache_aware.py
 
 # Run additional examples
 example-small:
 	@echo "Running small matrix example (2x2)..."
-	python -c "from io_simulator import IOSimulator; from algorithms import transpose_cache_aware; import numpy as np; A = np.array([[1, 2], [3, 4]]); print('Original:'); print(A); sim = IOSimulator(A, block_size=1, memory_size=4); result, io_count = transpose_cache_aware(sim); print('Transposed:'); print(result); print(f'I/O count: {io_count}')"
+	python -c "from io_simulator import IOSimulator; from algorithms.transpose import transpose_cache_aware; import numpy as np; A = np.array([[1, 2], [3, 4]]); print('Original:'); print(A); disk = IOSimulator(A, block_size=1, memory_size=4); result_flat, io_count = transpose_cache_aware(disk, 2, 2); result = result_flat.reshape(2, 2); print('Transposed:'); print(result); print(f'I/O count: {io_count}')"
 
 example-large:
 	@echo "Running large matrix example (8x8)..."
-	python -c "from io_simulator import IOSimulator; from algorithms import transpose_cache_aware; import numpy as np; A = np.arange(64).reshape(8, 8); print('Original (8x8):'); print(A); sim = IOSimulator(A, block_size=2, memory_size=16); result, io_count = transpose_cache_aware(sim); print('Transposed:'); print(result); print(f'I/O count: {io_count}')"
+	python -c "from io_simulator import IOSimulator; from algorithms.transpose import transpose_cache_aware; import numpy as np; A = np.arange(64).reshape(8, 8); print('Original (8x8):'); print(A); disk = IOSimulator(A, block_size=2, memory_size=16); result_flat, io_count = transpose_cache_aware(disk, 8, 8); result = result_flat.reshape(8, 8); print('Transposed:'); print(result); print(f'I/O count: {io_count}')"
+
+# Run external memory sorting example
+example-sorting:
+	@echo "Running external memory sorting example..."
+	python algorithms/sorting/external_merge_sort.py
 
 # Run all examples
-examples: example example-small example-large
+examples: example example-small example-large example-cache-oblivious example-sorting
 
 # Clean up __pycache__ directories
 clean:
@@ -62,11 +86,9 @@ install:
 # Run tests with coverage (if coverage is installed)
 test-coverage:
 	@echo "Running tests with coverage..."
-	python -m coverage run -m unittest tests.test_io_simulator tests.test_transpose
-	python -m coverage report
-	python -m coverage html
+	pytest tests/ --cov=. --cov-report=html --cov-report=term
 
 # Run a quick test to verify everything works
 quick-test:
 	@echo "Running quick verification test..."
-	python -c "from io_simulator import IOSimulator; from algorithms import transpose_cache_aware; import numpy as np; A = np.arange(4).reshape(2, 2); sim = IOSimulator(A, block_size=1, memory_size=4); result, io_count = transpose_cache_aware(sim); print('✓ Quick test passed!'); print(f'Result: {result}'); print(f'I/O count: {io_count}')"
+	python -c "from io_simulator import IOSimulator; from algorithms.transpose import transpose_cache_aware; import numpy as np; A = np.arange(4).reshape(2, 2); disk = IOSimulator(A, block_size=1, memory_size=4); result_flat, io_count = transpose_cache_aware(disk, 2, 2); result = result_flat.reshape(2, 2); print('✓ Quick test passed!'); print(f'Result: {result}'); print(f'I/O count: {io_count}')"

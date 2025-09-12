@@ -1,0 +1,11 @@
+[tool.pylint]
+# Suppress import warnings for packages that are installed in virtual environment
+ignored-modules = ["numpy", "pytest"]
+
+[tool.pylint."MESSAGES CONTROL"]
+disable = [
+    "import-error",  # Disable import resolution errors
+]
+
+[tool.pylint."IMPORTS"]
+ignored-modules = ["numpy", "pytest"]
