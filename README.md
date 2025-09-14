@@ -13,7 +13,9 @@ Implementation of various I/O efficient algorithms for external memory computati
 📖 **Algorithm Documentation:**
 - **[Matrix Transpose Algorithms →](algorithms/transpose/README.md)**
 - **[External Memory Sorting →](algorithms/sorting/README.md)**
-- **[B-Trees for External Memory →](algorithms/searching/README.md)**
+- **[External Memory Search Structures →](algorithms/searching/README.md)**
+  - **[B-Trees →](algorithms/searching/btree/README.md)**
+  - **[Buffer Trees →](algorithms/searching/buffer_tree/README.md)**
 
 ## I/O Model and Framework
 
@@ -100,26 +102,34 @@ pip install pytest
 ### Quick Start
 
 ```bash
-# Run matrix transpose examples
-make example                    # Cache-aware algorithm
-make example-cache-oblivious    # Cache-oblivious algorithm
+# Run examples
+make example                    # Matrix transpose (cache-aware)
+make example-cache-oblivious    # Matrix transpose (cache-oblivious)
+make example-sorting            # External memory sorting
+make example-btree              # B-tree operations
+make example-buffer-tree        # Buffer tree batch operations
 
 # Run all tests
 make test                       # All algorithms and simulator
 
 # Run specific test suites
 make test-transpose            # Matrix transpose tests
+make test-sorting              # External memory sorting tests
+make test-btree                # B-tree tests
+make test-buffer-tree          # Buffer tree tests
 make test-io                   # I/O simulator tests
 
-# Additional examples
+# Run all examples
 make examples                   # All available examples
 ```
 
-### Basic Usage
+### Basic Usage Examples
 
+#### Matrix Transposition
 ```python
 import numpy as np
 from io_simulator import IOSimulator
+from algorithms.transpose import transpose_cache_aware
 
 # Create a large matrix that doesn't fit in memory
 matrix = np.arange(16).reshape(4, 4)
@@ -127,7 +137,58 @@ matrix = np.arange(16).reshape(4, 4)
 # Initialize I/O simulator
 simulator = IOSimulator(matrix, block_size=2, memory_size=8)
 
-# Use with algorithms (see algorithms/README.md for details)
+# Perform cache-aware transpose
+result, io_count = transpose_cache_aware(simulator, 4, 4)
+print(f"Transposed with {io_count} I/O operations")
+```
+
+#### B-Tree Operations
+```python
+import numpy as np
+from io_simulator import IOSimulator
+from algorithms.searching import BTree
+
+# Setup external storage
+disk_data = np.zeros(10000)
+disk = IOSimulator(disk_data, block_size=50, memory_size=200)
+
+# Create B-tree
+btree = BTree(disk, d_min=3)
+
+# Dictionary operations
+btree.insert(10)
+btree.insert(20)
+found = btree.search(10)  # True
+min_key = btree.find_min()  # 10
+```
+
+#### Buffer Tree Batch Operations
+```python
+import numpy as np
+from io_simulator import IOSimulator
+from algorithms.searching import BufferTree
+
+# Setup larger external storage
+disk_data = np.zeros(50000)
+disk = IOSimulator(disk_data, block_size=50, memory_size=200)
+
+# Create buffer tree for batch processing
+buffer_tree = BufferTree(disk, degree=8)
+
+# Batch operations (accumulated in memory)
+for i in [10, 5, 15, 3, 7]:
+    buffer_tree.insert(i, f"value_{i}")
+
+# Process all operations together
+buffer_tree.flush_all_operations()
+
+# Search results
+for i in [5, 10, 15]:
+    buffer_tree.search(i)
+buffer_tree.flush_all_operations()
+
+# Check results - demonstrates batching efficiency
+print(f"Total I/O operations: {buffer_tree.get_io_count()}")
 ```
 
 ## Documentation
@@ -138,7 +199,9 @@ simulator = IOSimulator(matrix, block_size=2, memory_size=8)
 ### Algorithms
 - **[Matrix Transpose Algorithms](algorithms/transpose/README.md)** - Cache-aware and cache-oblivious transpose implementations
 - **[External Memory Sorting](algorithms/sorting/README.md)** - External merge sort algorithm and analysis
-- **[B-Trees for External Memory](algorithms/searching/README.md)** - External memory search trees and dictionary operations
+- **[External Memory Search Structures](algorithms/searching/README.md)** - Overview of search data structures
+  - **[B-Trees](algorithms/searching/btree/README.md)** - Classic balanced trees for interactive operations
+  - **[Buffer Trees](algorithms/searching/buffer_tree/README.md)** - Advanced batched processing achieving sorting bound
 
 ## Testing
 
@@ -151,7 +214,9 @@ make test
 # Specific test categories
 make test-io                   # I/O simulator tests
 make test-transpose           # Matrix transpose tests
-make test-sorting             # External merge sort tests
+make test-sorting             # External merge sort tests  
+make test-btree               # B-tree tests
+make test-buffer-tree         # Buffer tree tests
 
 # Quick verification
 make quick-test
@@ -179,15 +244,28 @@ make example-large    # Large 8x8 matrix
 
 # Cache-oblivious algorithm examples  
 make example-cache-oblivious  # Recursive approach
-
-# Run all examples
-make examples         # All implemented algorithms
 ```
 
-### External Sorting Examples
+### External Memory Algorithms Examples
 
 ```bash
-# Test external merge sort on different dataset sizes
+# External sorting
+make example-sorting        # External merge sort demonstration
+
+# B-tree operations (individual operations)
+make example-btree         # Dictionary operations with O(log_B n) per operation
+
+# Buffer tree operations (batch processing)
+make example-buffer-tree   # Batch operations achieving sorting bound
+
+# Run all examples
+make examples              # All implemented algorithms
+```
+
+### Custom Usage Examples
+
+```bash
+# External Sorting
 python -c "
 import numpy as np
 from io_simulator import IOSimulator
@@ -203,11 +281,30 @@ sorted_result, io_count = external_merge_sort(sim, len(test_array))
 print(f'Sorted: {sorted_result}')
 print(f'I/O operations: {io_count}')
 "
+
+# B-tree vs Buffer Tree I/O comparison
+python -c "
+import numpy as np
+from io_simulator import IOSimulator
+from algorithms.searching import BTree, BufferTree
+
+# B-tree: individual operations
+disk1 = IOSimulator(np.zeros(10000), block_size=50, memory_size=200)
+btree = BTree(disk1, d_min=3)
+for i in range(20):
+    btree.insert(i)
+print(f'B-tree (20 inserts): {btree.get_io_count()} I/O operations')
+
+# Buffer tree: batch operations  
+disk2 = IOSimulator(np.zeros(50000), block_size=50, memory_size=200)
+buffer_tree = BufferTree(disk2, degree=8)
+for i in range(20):
+    buffer_tree.insert(i, f'value_{i}')
+buffer_tree.flush_all_operations()
+print(f'Buffer tree (20 batch inserts): {buffer_tree.get_io_count()} I/O operations')
+print('Buffer tree demonstrates batching advantage!')
+"
 ```
-
-### Future Algorithm Examples
-
-*As more algorithms are added, corresponding examples will be available through make commands.*
 
 ## License
 
