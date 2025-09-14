@@ -1,6 +1,6 @@
 # Makefile for transpose_cache_aware project
 
-.PHONY: help test test-io test-transpose test-sorting test-btree example example-small example-large example-sorting example-btree examples clean install
+.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree example example-small example-large example-sorting example-btree example-buffer-tree examples clean install
 
 # Default target
 help:
@@ -11,6 +11,7 @@ help:
 	@echo "  test-transpose - Run transpose tests only"
 	@echo "  test-sorting - Run sorting tests only"
 	@echo "  test-btree  - Run B-tree tests only"
+	@echo "  test-buffer-tree - Run Buffer tree tests only"
 	@echo "  test-cache-oblivious - Run cache-oblivious tests only"
 	@echo "  example     - Run the built-in transpose example (4x4 matrix)"
 	@echo "  example-small - Run small matrix example (2x2)"
@@ -18,6 +19,7 @@ help:
 	@echo "  example-cache-oblivious - Run cache-oblivious algorithm example"
 	@echo "  example-sorting - Run external memory sorting example"
 	@echo "  example-btree - Run B-tree example"
+	@echo "  example-buffer-tree - Run Buffer tree example"
 	@echo "  examples    - Run all examples"
 	@echo "  clean       - Clean up __pycache__ directories"
 	@echo "  install     - Install dependencies"
@@ -57,6 +59,11 @@ test-btree:
 	@echo "Running B-tree tests..."
 	pytest tests/test_btree.py -v
 
+# Run Buffer tree tests only
+test-buffer-tree:
+	@echo "Running Buffer tree tests..."
+	pytest tests/test_buffer_tree.py -v
+
 # Run the transpose example (built-in example in transpose_cache_aware.py)
 example:
 	@echo "Running transpose example..."
@@ -79,10 +86,15 @@ example-sorting:
 # Run B-tree example
 example-btree:
 	@echo "Running B-tree example..."
-	python algorithms/searching/btree.py
+	python algorithms/searching/btree/btree.py
+
+# Run Buffer tree example
+example-buffer-tree:
+	@echo "Running Buffer tree example..."
+	python algorithms/searching/buffer_tree/buffer_tree.py
 
 # Run all examples
-examples: example example-small example-large example-cache-oblivious example-sorting example-btree
+examples: example example-small example-large example-cache-oblivious example-sorting example-btree example-buffer-tree
 
 # Clean up __pycache__ directories
 clean:

@@ -6,5 +6,6 @@ where I/O operations are the primary performance bottleneck.
 """
 
 from .btree import BTree
+from .buffer_tree import BufferTree, Operation, OperationType
 
-__all__ = ['BTree']
+__all__ = ['BTree', 'BufferTree', 'Operation', 'OperationType']

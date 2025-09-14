@@ -7,6 +7,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 - **Matrix Transposition**: Cache-aware and cache-oblivious algorithms for transposing large square matrices
 - **External Memory Sorting**: External merge sort algorithm for sorting datasets larger than memory
 - **B-Trees**: External memory search trees for efficient dictionary operations
+- **Buffer Trees**: Advanced batched processing trees achieving optimal sorting bound
 - *More algorithms coming soon...*
 
 📖 **Algorithm Documentation:**
@@ -39,9 +40,17 @@ Implementation of various I/O efficient algorithms for external memory computati
 │   ├── [future README files...]      # Algorithm category documentation
 │   ├── searching/                    # External memory search structures
 │   │   ├── __init__.py
-│   │   ├── README.md                 # B-tree documentation
-│   │   ├── btree.py                  # B-tree implementation
-│   │   └── b-trees.py                # Algorithm description (Russian)
+│   │   ├── README.md                 # Search structures overview
+│   │   ├── btree/                    # B-tree implementation
+│   │   │   ├── __init__.py
+│   │   │   ├── README.md             # B-tree documentation
+│   │   │   └── btree.py              # B-tree implementation
+│   │   ├── buffer_tree/              # Buffer tree implementation
+│   │   │   ├── __init__.py
+│   │   │   ├── README.md             # Buffer tree documentation
+│   │   │   └── buffer_tree.py        # Buffer tree implementation
+│   │   ├── b-trees.py                # Algorithm description (Russian)
+│   │   └── buffer_trees.py           # Algorithm description (Russian)
 │   ├── sorting/                      # External memory sorting algorithms
 │   │   ├── __init__.py
 │   │   ├── README.md                 # Sorting algorithm documentation  
@@ -59,6 +68,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 ├── tests/
 │   ├── test_io_simulator.py          # Tests for I/O simulator
 │   ├── test_btree.py                 # Tests for B-tree implementation
+│   ├── test_buffer_tree.py           # Tests for Buffer tree implementation
 │   ├── test_external_merge_sort.py   # Tests for external merge sort
 │   ├── test_transpose_cache_aware.py # Tests for cache-aware transpose
 │   ├── test_transpose_cache_oblivious.py # Tests for cache-oblivious transpose
