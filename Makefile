@@ -1,6 +1,6 @@
 # Makefile for transpose_cache_aware project
 
-.PHONY: help test test-io test-transpose test-sorting example example-small example-large example-sorting examples clean install
+.PHONY: help test test-io test-transpose test-sorting test-btree example example-small example-large example-sorting example-btree examples clean install
 
 # Default target
 help:
@@ -10,12 +10,14 @@ help:
 	@echo "  test-io     - Run IOSimulator tests only"
 	@echo "  test-transpose - Run transpose tests only"
 	@echo "  test-sorting - Run sorting tests only"
+	@echo "  test-btree  - Run B-tree tests only"
 	@echo "  test-cache-oblivious - Run cache-oblivious tests only"
 	@echo "  example     - Run the built-in transpose example (4x4 matrix)"
 	@echo "  example-small - Run small matrix example (2x2)"
 	@echo "  example-large - Run large matrix example (8x8)"
 	@echo "  example-cache-oblivious - Run cache-oblivious algorithm example"
 	@echo "  example-sorting - Run external memory sorting example"
+	@echo "  example-btree - Run B-tree example"
 	@echo "  examples    - Run all examples"
 	@echo "  clean       - Clean up __pycache__ directories"
 	@echo "  install     - Install dependencies"
@@ -50,6 +52,11 @@ test-sorting:
 	@echo "Running sorting tests..."
 	pytest tests/test_external_merge_sort.py -v
 
+# Run B-tree tests only
+test-btree:
+	@echo "Running B-tree tests..."
+	pytest tests/test_btree.py -v
+
 # Run the transpose example (built-in example in transpose_cache_aware.py)
 example:
 	@echo "Running transpose example..."
@@ -69,8 +76,13 @@ example-sorting:
 	@echo "Running external memory sorting example..."
 	python algorithms/sorting/external_merge_sort.py
 
+# Run B-tree example
+example-btree:
+	@echo "Running B-tree example..."
+	python algorithms/searching/btree.py
+
 # Run all examples
-examples: example example-small example-large example-cache-oblivious example-sorting
+examples: example example-small example-large example-cache-oblivious example-sorting example-btree
 
 # Clean up __pycache__ directories
 clean:

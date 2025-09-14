@@ -6,11 +6,13 @@ Implementation of various I/O efficient algorithms for external memory computati
 
 - **Matrix Transposition**: Cache-aware and cache-oblivious algorithms for transposing large square matrices
 - **External Memory Sorting**: External merge sort algorithm for sorting datasets larger than memory
+- **B-Trees**: External memory search trees for efficient dictionary operations
 - *More algorithms coming soon...*
 
 📖 **Algorithm Documentation:**
 - **[Matrix Transpose Algorithms →](algorithms/transpose/README.md)**
 - **[External Memory Sorting →](algorithms/sorting/README.md)**
+- **[B-Trees for External Memory →](algorithms/searching/README.md)**
 
 ## I/O Model and Framework
 
@@ -35,6 +37,11 @@ Implementation of various I/O efficient algorithms for external memory computati
 ├── algorithms/
 │   ├── __init__.py
 │   ├── [future README files...]      # Algorithm category documentation
+│   ├── searching/                    # External memory search structures
+│   │   ├── __init__.py
+│   │   ├── README.md                 # B-tree documentation
+│   │   ├── btree.py                  # B-tree implementation
+│   │   └── b-trees.py                # Algorithm description (Russian)
 │   ├── sorting/                      # External memory sorting algorithms
 │   │   ├── __init__.py
 │   │   ├── README.md                 # Sorting algorithm documentation  
@@ -51,6 +58,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 │   └── io_simulator.py               # Core I/O operations simulator
 ├── tests/
 │   ├── test_io_simulator.py          # Tests for I/O simulator
+│   ├── test_btree.py                 # Tests for B-tree implementation
 │   ├── test_external_merge_sort.py   # Tests for external merge sort
 │   ├── test_transpose_cache_aware.py # Tests for cache-aware transpose
 │   ├── test_transpose_cache_oblivious.py # Tests for cache-oblivious transpose
@@ -120,6 +128,7 @@ simulator = IOSimulator(matrix, block_size=2, memory_size=8)
 ### Algorithms
 - **[Matrix Transpose Algorithms](algorithms/transpose/README.md)** - Cache-aware and cache-oblivious transpose implementations
 - **[External Memory Sorting](algorithms/sorting/README.md)** - External merge sort algorithm and analysis
+- **[B-Trees for External Memory](algorithms/searching/README.md)** - External memory search trees and dictionary operations
 
 ## Testing
 
