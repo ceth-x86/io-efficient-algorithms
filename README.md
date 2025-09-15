@@ -110,8 +110,8 @@ pip install pytest
 
 ```bash
 # Run examples
-make example                    # Matrix transpose (cache-aware)
-make example-cache-oblivious    # Matrix transpose (cache-oblivious)
+make example-transpose-cache-aware      # Matrix transpose (cache-aware)
+make example-transpose-cache-oblivious  # Matrix transpose (cache-oblivious)
 make example-sorting            # External memory sorting
 make example-btree              # B-tree operations
 make example-buffer-tree        # Buffer tree batch operations
@@ -280,12 +280,12 @@ make test-coverage
 
 ```bash
 # Cache-aware algorithm examples
-make example          # Default 4x4 matrix
-make example-small    # Small 2x2 matrix
-make example-large    # Large 8x8 matrix
+make example-transpose-cache-aware  # Default 4x4 matrix
+make example-small                  # Small 2x2 matrix
+make example-large                  # Large 8x8 matrix
 
 # Cache-oblivious algorithm examples  
-make example-cache-oblivious  # Recursive approach
+make example-transpose-cache-oblivious  # Recursive approach
 ```
 
 ### External Memory Algorithms Examples

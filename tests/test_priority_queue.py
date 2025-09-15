@@ -55,7 +55,7 @@ class TestExternalPriorityQueue:
         values = [f"item_{p}" for p in priorities]
 
         # Insert elements
-        for priority, value in zip(priorities, values):
+        for priority, value in zip(priorities, values, strict=True):
             priority_queue.insert(priority, value)
 
         priority_queue.flush_all_operations()
@@ -73,7 +73,7 @@ class TestExternalPriorityQueue:
         assert extracted_priorities == expected_priorities
 
         # Verify correct values
-        for (priority, value), expected_priority in zip(extracted, expected_priorities):
+        for (priority, value), expected_priority in zip(extracted, expected_priorities, strict=True):
             assert priority == expected_priority
             assert value == f"item_{expected_priority}"
 
@@ -158,7 +158,8 @@ class TestExternalPriorityQueue:
         """Test I/O efficiency of phase-based processing."""
         num_elements = 100
         priorities = list(range(num_elements))
-        np.random.shuffle(priorities)
+        rng = np.random.default_rng()
+        rng.shuffle(priorities)
 
         initial_io = priority_queue.get_io_count()
 
@@ -166,7 +167,7 @@ class TestExternalPriorityQueue:
         for priority in priorities:
             priority_queue.insert(priority, f"value_{priority}")
 
-        insertion_io = priority_queue.get_io_count() - initial_io
+        _ = priority_queue.get_io_count() - initial_io  # Track insertion I/O
 
         # Extract all elements
         extract_io_start = priority_queue.get_io_count()
@@ -177,14 +178,14 @@ class TestExternalPriorityQueue:
             if elem:
                 extracted.append(elem)
 
-        extraction_io = priority_queue.get_io_count() - extract_io_start
+        _ = priority_queue.get_io_count() - extract_io_start  # Track extraction I/O
 
         # I/O should be efficient due to phase-based processing
         total_io = priority_queue.get_io_count() - initial_io
         total_ops = num_elements * 2  # inserts + extracts
         amortized_io = total_io / total_ops
 
-        print(f"Total I/O: {total_io}, Operations: {total_ops}, Amortized: {amortized_io:.3f}")
+        print(f"Total I/O: {total_io}, Operations: {total_ops}, Amortized: {amortized_io:.3f}")  # noqa: T201
 
         # Should achieve reasonable I/O efficiency with phase-based processing
         # Note: This implementation prioritizes correctness over optimal I/O
@@ -198,7 +199,8 @@ class TestExternalPriorityQueue:
         """Test priority queue with larger dataset."""
         num_elements = 200
         priorities = list(range(1, num_elements + 1))
-        np.random.shuffle(priorities)
+        rng = np.random.default_rng()
+        rng.shuffle(priorities)
 
         # Insert all elements
         for priority in priorities:
@@ -269,14 +271,14 @@ class TestExternalPriorityQueue:
 
     def test_stress_batch_operations(self, priority_queue: ExternalPriorityQueue):
         """Stress test with batch operations (more realistic for external memory)."""
-        np.random.seed(123)  # Reproducible test
+        rng = np.random.default_rng(123)  # Reproducible test
 
         priorities_inserted = []
         priorities_extracted = []
 
         # Phase 1: Batch insert many elements
         for _ in range(50):
-            priority = np.random.randint(1, 1000)
+            priority = rng.integers(1, 1000)
             priority_queue.insert(priority, f"value_{priority}")
             priorities_inserted.append(priority)
 
@@ -288,7 +290,7 @@ class TestExternalPriorityQueue:
 
         # Phase 3: Insert more elements
         for _ in range(30):
-            priority = np.random.randint(1, 1000)
+            priority = rng.integers(1, 1000)
             priority_queue.insert(priority, f"value_{priority}")
             priorities_inserted.append(priority)
 

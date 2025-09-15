@@ -1,6 +1,6 @@
 # Makefile for transpose_cache_aware project
 
-.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree test-priority-queue example example-small example-large example-sorting example-btree example-buffer-tree example-priority-queue examples clean install
+.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree test-priority-queue example-transpose-cache-aware example-small example-large example-transpose-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue examples clean install
 
 # Default target
 help:
@@ -14,10 +14,10 @@ help:
 	@echo "  test-buffer-tree - Run Buffer tree tests only"
 	@echo "  test-priority-queue - Run Priority queue tests only"
 	@echo "  test-cache-oblivious - Run cache-oblivious tests only"
-	@echo "  example     - Run the built-in transpose example (4x4 matrix)"
+	@echo "  example-transpose-cache-aware - Run the built-in transpose example (4x4 matrix)"
 	@echo "  example-small - Run small matrix example (2x2)"
 	@echo "  example-large - Run large matrix example (8x8)"
-	@echo "  example-cache-oblivious - Run cache-oblivious algorithm example"
+	@echo "  example-transpose-cache-oblivious - Run cache-oblivious algorithm example"
 	@echo "  example-sorting - Run external memory sorting example"
 	@echo "  example-btree - Run B-tree example"
 	@echo "  example-buffer-tree - Run Buffer tree example"
@@ -37,7 +37,7 @@ test-cache-oblivious:
 	pytest tests/test_transpose_cache_oblivious.py -v
 
 # Run cache-oblivious algorithm example
-example-cache-oblivious:
+example-transpose-cache-oblivious:
 	@echo "Running cache-oblivious algorithm example..."
 	python algorithms/transpose/cache_oblivious.py
 
@@ -72,7 +72,7 @@ test-priority-queue:
 	pytest tests/test_priority_queue.py -v
 
 # Run the transpose example (built-in example in transpose_cache_aware.py)
-example:
+example-transpose-cache-aware:
 	@echo "Running transpose example..."
 	python algorithms/transpose/cache_aware.py
 
@@ -106,7 +106,7 @@ example-priority-queue:
 	python algorithms/searching/priority_queue/priority_queue.py
 
 # Run all examples
-examples: example example-small example-large example-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue
+examples: example-transpose-cache-aware example-small example-large example-transpose-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue
 
 # Clean up __pycache__ directories
 clean:

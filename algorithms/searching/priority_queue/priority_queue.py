@@ -42,7 +42,7 @@ class ExternalPriorityQueue:
         degree: Node degree for underlying buffer tree
     """
 
-    def __init__(self, disk: IOSimulator, memory_size: int = 200, block_size: int = 50, degree: int = 16):
+    def __init__(self, disk: IOSimulator, memory_size: int = 200, block_size: int = 50, degree: int = 16) -> None:
         self.disk = disk
         self.memory_size = memory_size
         self.block_size = block_size
@@ -188,7 +188,7 @@ class ExternalPriorityQueue:
                 remaining = temp_elements[1:]
 
                 # Convert to original priority format
-                if isinstance(stored_value, tuple) and len(stored_value) == 2:
+                if isinstance(stored_value, tuple) and len(stored_value) == 2:  # noqa: PLR2004
                     original_priority, actual_value = stored_value
                     result = (original_priority, actual_value)
                 else:
@@ -205,7 +205,7 @@ class ExternalPriorityQueue:
 
         return None
 
-    def _collect_all_elements(self, node, elements_list):
+    def _collect_all_elements(self, node: Any, elements_list: list) -> None:
         """Helper method to collect all elements from the tree structure."""
         if node.is_leaf:
             # Add all data from this leaf (without clearing)
@@ -266,7 +266,7 @@ if __name__ == "__main__":
 
     import numpy as np
 
-    print("Testing External Memory Priority Queue...")
+    print("Testing External Memory Priority Queue...")  # noqa: T201
 
     # Create large disk for priority queue storage
     disk_data = np.zeros(50000)
@@ -275,7 +275,7 @@ if __name__ == "__main__":
     # Create priority queue with phase size = M/4 = 50
     pq = ExternalPriorityQueue(disk, memory_size=200, block_size=50, degree=8)
 
-    print("\nTesting phase-based operations...")
+    print("\nTesting phase-based operations...")  # noqa: T201
 
     # Test insertions and extractions
     priorities = [10, 5, 15, 3, 7, 12, 18, 1, 4, 6, 8, 11, 13, 16, 20]
@@ -283,76 +283,77 @@ if __name__ == "__main__":
 
     initial_io = pq.get_io_count()
 
-    print(f"Inserting {len(priorities)} elements...")
-    for priority, value in zip(priorities, values):
+    print(f"Inserting {len(priorities)} elements...")  # noqa: T201
+    for priority, value in zip(priorities, values, strict=True):
         pq.insert(priority, value)
 
     insert_io = pq.get_io_count() - initial_io
-    print(f"I/O operations for insertions: {insert_io}")
+    print(f"I/O operations for insertions: {insert_io}")  # noqa: T201
 
     # Test extractions
     extract_io_start = pq.get_io_count()
     extracted = []
 
-    print(f"\nQueue size before extraction: {pq.size()}")
-    print(f"Queue empty before extraction: {pq.is_empty()}")
+    print(f"\nQueue size before extraction: {pq.size()}")  # noqa: T201
+    print(f"Queue empty before extraction: {pq.is_empty()}")  # noqa: T201
 
-    print("Extracting minimum elements...")
+    print("Extracting minimum elements...")  # noqa: T201
     # Force flush all operations first to ensure elements are in the tree
     pq.flush_all_operations()
 
-    print(f"Queue size after flush: {pq.size()}")
-    print(f"Queue empty after flush: {pq.is_empty()}")
+    print(f"Queue size after flush: {pq.size()}")  # noqa: T201
+    print(f"Queue empty after flush: {pq.is_empty()}")  # noqa: T201
 
     # Extract elements one by one
     for i in range(len(priorities)):
         min_elem = pq.extract_min()
         if min_elem:
             extracted.append(min_elem)
-            print(f"Extracted: {min_elem}")
+            print(f"Extracted: {min_elem}")  # noqa: T201
         else:
-            print(f"No more elements to extract (iteration {i})")
+            print(f"No more elements to extract (iteration {i})")  # noqa: T201
             break
 
     extract_io = pq.get_io_count() - extract_io_start
-    print(f"I/O operations for extractions: {extract_io}")
+    print(f"I/O operations for extractions: {extract_io}")  # noqa: T201
 
     # Verify elements are extracted in priority order
     extracted_priorities = [elem[0] for elem in extracted]
     is_sorted = extracted_priorities == sorted(priorities)
-    print(f"\nElements extracted in correct order: {is_sorted}")
-    print(f"Expected: {sorted(priorities)}")
-    print(f"Got:      {extracted_priorities}")
-    print(f"Extracted count: {len(extracted)}, Expected count: {len(priorities)}")
+    print(f"\nElements extracted in correct order: {is_sorted}")  # noqa: T201
+    print(f"Expected: {sorted(priorities)}")  # noqa: T201
+    print(f"Got:      {extracted_priorities}")  # noqa: T201
+    print(f"Extracted count: {len(extracted)}, Expected count: {len(priorities)}")  # noqa: T201
 
-    print(f"\nTotal I/O operations: {pq.get_io_count()}")
+    print(f"\nTotal I/O operations: {pq.get_io_count()}")  # noqa: T201
     total_ops = len(priorities) * 2  # inserts + extracts
-    print(f"Total operations: {total_ops}")
-    print(f"Amortized I/O per operation: {pq.get_io_count() / total_ops:.3f}")
-    print("Phase-based processing demonstrates I/O efficiency!")
+    print(f"Total operations: {total_ops}")  # noqa: T201
+    print(f"Amortized I/O per operation: {pq.get_io_count() / total_ops:.3f}")  # noqa: T201
+    print("Phase-based processing demonstrates I/O efficiency!")  # noqa: T201
 
     # Test mixed operations
-    print("\n\nTesting mixed insert/extract operations...")
+    print("\n\nTesting mixed insert/extract operations...")  # noqa: T201
     pq2 = ExternalPriorityQueue(disk, memory_size=200, block_size=50, degree=8)
 
     random.seed(42)
     mixed_io_start = pq2.get_io_count()
 
-    for i in range(20):
-        if random.random() < 0.7:  # 70% chance to insert
+    INSERT_PROBABILITY = 0.7
+    for _ in range(20):
+        if random.random() < INSERT_PROBABILITY:  # 70% chance to insert
             priority = random.randint(1, 100)
             pq2.insert(priority, f"random_{priority}")
-            print(f"Inserted {priority}")
+            print(f"Inserted {priority}")  # noqa: T201
         else:  # 30% chance to extract
             min_elem = pq2.extract_min()
             if min_elem:
-                print(f"Extracted {min_elem[0]}")
+                print(f"Extracted {min_elem[0]}")  # noqa: T201
             else:
-                print("Queue empty")
+                print("Queue empty")  # noqa: T201
 
     # Final flush
     pq2.flush_all_operations()
 
     mixed_io = pq2.get_io_count() - mixed_io_start
-    print(f"Mixed operations I/O: {mixed_io}")
-    print("External Memory Priority Queue test completed!")
+    print(f"Mixed operations I/O: {mixed_io}")  # noqa: T201
+    print("External Memory Priority Queue test completed!")  # noqa: T201
