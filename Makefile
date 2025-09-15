@@ -1,6 +1,6 @@
 # Makefile for transpose_cache_aware project
 
-.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree example example-small example-large example-sorting example-btree example-buffer-tree examples clean install
+.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree test-priority-queue example example-small example-large example-sorting example-btree example-buffer-tree example-priority-queue examples clean install
 
 # Default target
 help:
@@ -12,6 +12,7 @@ help:
 	@echo "  test-sorting - Run sorting tests only"
 	@echo "  test-btree  - Run B-tree tests only"
 	@echo "  test-buffer-tree - Run Buffer tree tests only"
+	@echo "  test-priority-queue - Run Priority queue tests only"
 	@echo "  test-cache-oblivious - Run cache-oblivious tests only"
 	@echo "  example     - Run the built-in transpose example (4x4 matrix)"
 	@echo "  example-small - Run small matrix example (2x2)"
@@ -20,6 +21,7 @@ help:
 	@echo "  example-sorting - Run external memory sorting example"
 	@echo "  example-btree - Run B-tree example"
 	@echo "  example-buffer-tree - Run Buffer tree example"
+	@echo "  example-priority-queue - Run Priority queue example"
 	@echo "  examples    - Run all examples"
 	@echo "  clean       - Clean up __pycache__ directories"
 	@echo "  install     - Install dependencies"
@@ -64,6 +66,11 @@ test-buffer-tree:
 	@echo "Running Buffer tree tests..."
 	pytest tests/test_buffer_tree.py -v
 
+# Run Priority queue tests only
+test-priority-queue:
+	@echo "Running Priority queue tests..."
+	pytest tests/test_priority_queue.py -v
+
 # Run the transpose example (built-in example in transpose_cache_aware.py)
 example:
 	@echo "Running transpose example..."
@@ -93,8 +100,13 @@ example-buffer-tree:
 	@echo "Running Buffer tree example..."
 	python algorithms/searching/buffer_tree/buffer_tree.py
 
+# Run Priority queue example
+example-priority-queue:
+	@echo "Running Priority queue example..."
+	python algorithms/searching/priority_queue/priority_queue.py
+
 # Run all examples
-examples: example example-small example-large example-cache-oblivious example-sorting example-btree example-buffer-tree
+examples: example example-small example-large example-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue
 
 # Clean up __pycache__ directories
 clean:

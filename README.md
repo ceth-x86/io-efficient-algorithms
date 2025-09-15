@@ -8,6 +8,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 - **External Memory Sorting**: External merge sort algorithm for sorting datasets larger than memory
 - **B-Trees**: External memory search trees for efficient dictionary operations
 - **Buffer Trees**: Advanced batched processing trees achieving optimal sorting bound
+- **Priority Queues**: Phase-based priority queues achieving optimal I/O complexity for batch operations
 - *More algorithms coming soon...*
 
 📖 **Algorithm Documentation:**
@@ -16,6 +17,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 - **[External Memory Search Structures →](algorithms/searching/README.md)**
   - **[B-Trees →](algorithms/searching/btree/README.md)**
   - **[Buffer Trees →](algorithms/searching/buffer_tree/README.md)**
+  - **[Priority Queues →](algorithms/searching/priority_queue/README.md)**
 
 ## I/O Model and Framework
 
@@ -51,6 +53,10 @@ Implementation of various I/O efficient algorithms for external memory computati
 │   │   │   ├── __init__.py
 │   │   │   ├── README.md             # Buffer tree documentation
 │   │   │   └── buffer_tree.py        # Buffer tree implementation
+│   │   ├── priority_queue/           # Priority queue implementation
+│   │   │   ├── __init__.py
+│   │   │   ├── README.md             # Priority queue documentation
+│   │   │   └── priority_queue.py     # Priority queue implementation
 │   │   ├── b-trees.py                # Algorithm description (Russian)
 │   │   └── buffer_trees.py           # Algorithm description (Russian)
 │   ├── sorting/                      # External memory sorting algorithms
@@ -71,6 +77,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 │   ├── test_io_simulator.py          # Tests for I/O simulator
 │   ├── test_btree.py                 # Tests for B-tree implementation
 │   ├── test_buffer_tree.py           # Tests for Buffer tree implementation
+│   ├── test_priority_queue.py        # Tests for Priority queue implementation
 │   ├── test_external_merge_sort.py   # Tests for external merge sort
 │   ├── test_transpose_cache_aware.py # Tests for cache-aware transpose
 │   ├── test_transpose_cache_oblivious.py # Tests for cache-oblivious transpose
@@ -108,6 +115,7 @@ make example-cache-oblivious    # Matrix transpose (cache-oblivious)
 make example-sorting            # External memory sorting
 make example-btree              # B-tree operations
 make example-buffer-tree        # Buffer tree batch operations
+make example-priority-queue     # Priority queue phase-based operations
 
 # Run all tests
 make test                       # All algorithms and simulator
@@ -117,6 +125,7 @@ make test-transpose            # Matrix transpose tests
 make test-sorting              # External memory sorting tests
 make test-btree                # B-tree tests
 make test-buffer-tree          # Buffer tree tests
+make test-priority-queue       # Priority queue tests
 make test-io                   # I/O simulator tests
 
 # Run all examples
@@ -191,6 +200,38 @@ buffer_tree.flush_all_operations()
 print(f"Total I/O operations: {buffer_tree.get_io_count()}")
 ```
 
+#### Priority Queue Phase-Based Operations
+```python
+import numpy as np
+from io_simulator import IOSimulator
+from algorithms.searching.priority_queue import ExternalPriorityQueue
+
+# Setup external storage
+disk_data = np.zeros(50000)
+disk = IOSimulator(disk_data, block_size=50, memory_size=200)
+
+# Create priority queue with phase size M/4 = 50
+pq = ExternalPriorityQueue(disk, memory_size=200, block_size=50, degree=8)
+
+# Insert elements (goes to buffer tree when no active phase)
+priorities = [10, 5, 15, 3, 7, 12, 18, 1, 4, 6]
+for priority in priorities:
+    pq.insert(priority, f"value_{priority}")
+
+# First extract starts a phase - loads M/4 minimum elements
+min_elem = pq.extract_min()  # Gets (1, "value_1")
+print(f"First extract: {min_elem}")
+
+# Subsequent extracts work from in-memory set
+while not pq.is_empty():
+    elem = pq.extract_min()
+    if elem:
+        print(f"Extracted: {elem}")
+
+print(f"Total I/O operations: {pq.get_io_count()}")
+print("Phase-based processing demonstrates I/O efficiency!")
+```
+
 ## Documentation
 
 ### Core Framework
@@ -202,6 +243,7 @@ print(f"Total I/O operations: {buffer_tree.get_io_count()}")
 - **[External Memory Search Structures](algorithms/searching/README.md)** - Overview of search data structures
   - **[B-Trees](algorithms/searching/btree/README.md)** - Classic balanced trees for interactive operations
   - **[Buffer Trees](algorithms/searching/buffer_tree/README.md)** - Advanced batched processing achieving sorting bound
+  - **[Priority Queues](algorithms/searching/priority_queue/README.md)** - Phase-based priority queues for batch operations
 
 ## Testing
 
@@ -255,8 +297,11 @@ make example-sorting        # External merge sort demonstration
 # B-tree operations (individual operations)
 make example-btree         # Dictionary operations with O(log_B n) per operation
 
-# Buffer tree operations (batch processing)
+# Buffer tree operations (batch processing)  
 make example-buffer-tree   # Batch operations achieving sorting bound
+
+# Priority queue operations (phase-based processing)
+make example-priority-queue # Phase-based operations achieving sorting bound
 
 # Run all examples
 make examples              # All implemented algorithms
@@ -282,11 +327,12 @@ print(f'Sorted: {sorted_result}')
 print(f'I/O operations: {io_count}')
 "
 
-# B-tree vs Buffer Tree I/O comparison
+# B-tree vs Buffer Tree vs Priority Queue I/O comparison
 python -c "
 import numpy as np
 from io_simulator import IOSimulator
 from algorithms.searching import BTree, BufferTree
+from algorithms.searching.priority_queue import ExternalPriorityQueue
 
 # B-tree: individual operations
 disk1 = IOSimulator(np.zeros(10000), block_size=50, memory_size=200)
@@ -302,7 +348,18 @@ for i in range(20):
     buffer_tree.insert(i, f'value_{i}')
 buffer_tree.flush_all_operations()
 print(f'Buffer tree (20 batch inserts): {buffer_tree.get_io_count()} I/O operations')
-print('Buffer tree demonstrates batching advantage!')
+
+# Priority queue: phase-based operations
+disk3 = IOSimulator(np.zeros(50000), block_size=50, memory_size=200)
+pq = ExternalPriorityQueue(disk3, memory_size=200, block_size=50, degree=8)
+for i in range(20):
+    pq.insert(i, f'item_{i}')
+extracted = []
+while not pq.is_empty():
+    elem = pq.extract_min()
+    if elem: extracted.append(elem[0])
+print(f'Priority queue (20 inserts + extracts): {pq.get_io_count()} I/O operations')
+print('Phase-based processing demonstrates batching advantage!')
 "
 ```
 
