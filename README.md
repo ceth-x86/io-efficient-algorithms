@@ -9,6 +9,8 @@ Implementation of various I/O efficient algorithms for external memory computati
 - **B-Trees**: External memory search trees for efficient dictionary operations
 - **Buffer Trees**: Advanced batched processing trees achieving optimal sorting bound
 - **Priority Queues**: Phase-based priority queues achieving optimal I/O complexity for batch operations
+- **Time-Forward Processing**: I/O-efficient algorithms for computing local functions on DAGs
+- **Maximal Independent Sets**: Graph algorithms using time-forward processing for optimal I/O complexity
 - *More algorithms coming soon...*
 
 📖 **Algorithm Documentation:**
@@ -18,6 +20,7 @@ Implementation of various I/O efficient algorithms for external memory computati
   - **[B-Trees →](algorithms/searching/btree/README.md)**
   - **[Buffer Trees →](algorithms/searching/buffer_tree/README.md)**
   - **[Priority Queues →](algorithms/searching/priority_queue/README.md)**
+- **[Time-Forward Processing →](algorithms/time_forward_processing/README.md)**
 
 ## I/O Model and Framework
 
@@ -59,6 +62,10 @@ Implementation of various I/O efficient algorithms for external memory computati
 │   │   │   └── priority_queue.py     # Priority queue implementation
 │   │   ├── b-trees.py                # Algorithm description (Russian)
 │   │   └── buffer_trees.py           # Algorithm description (Russian)
+│   ├── time_forward_processing/      # Time-forward processing algorithms
+│   │   ├── __init__.py
+│   │   ├── README.md                 # Time-forward processing documentation
+│   │   └── maximal_independent_sets.py # Maximal independent sets implementation
 │   ├── sorting/                      # External memory sorting algorithms
 │   │   ├── __init__.py
 │   │   ├── README.md                 # Sorting algorithm documentation  
@@ -78,6 +85,7 @@ Implementation of various I/O efficient algorithms for external memory computati
 │   ├── test_btree.py                 # Tests for B-tree implementation
 │   ├── test_buffer_tree.py           # Tests for Buffer tree implementation
 │   ├── test_priority_queue.py        # Tests for Priority queue implementation
+│   ├── test_maximal_independent_sets.py # Tests for time-forward processing
 │   ├── test_external_merge_sort.py   # Tests for external merge sort
 │   ├── test_transpose_cache_aware.py # Tests for cache-aware transpose
 │   ├── test_transpose_cache_oblivious.py # Tests for cache-oblivious transpose
@@ -116,6 +124,8 @@ make example-sorting            # External memory sorting
 make example-btree              # B-tree operations
 make example-buffer-tree        # Buffer tree batch operations
 make example-priority-queue     # Priority queue phase-based operations
+make example-time-forward       # Time-forward processing
+make example-maximal-independent-sets # Maximal independent sets
 
 # Run all tests
 make test                       # All algorithms and simulator
@@ -126,6 +136,8 @@ make test-sorting              # External memory sorting tests
 make test-btree                # B-tree tests
 make test-buffer-tree          # Buffer tree tests
 make test-priority-queue       # Priority queue tests
+make test-time-forward         # Time-forward processing tests
+make test-maximal-independent-sets # Maximal independent sets tests
 make test-io                   # I/O simulator tests
 
 # Run all examples
@@ -232,6 +244,32 @@ print(f"Total I/O operations: {pq.get_io_count()}")
 print("Phase-based processing demonstrates I/O efficiency!")
 ```
 
+#### Time-Forward Processing and Maximal Independent Sets
+```python
+import numpy as np
+from io_simulator import IOSimulator
+from algorithms.time_forward_processing import Graph, MaximalIndependentSetSolver
+
+# Setup external memory
+disk_data = np.zeros(10000)
+disk = IOSimulator(disk_data, block_size=50, memory_size=200)
+solver = MaximalIndependentSetSolver(disk)
+
+# Create path graph: 0-1-2-3-4
+graph = Graph(5)
+for i in range(4):
+    graph.add_edge(i, i + 1)
+
+# Compute maximal independent set using time-forward processing
+independent_set, values = solver.solve(graph)
+print(f"Graph: Path 0-1-2-3-4")
+print(f"Maximal independent set: {sorted(independent_set)}")
+print(f"Is independent: {solver.verify_independence(graph, independent_set)}")
+print(f"Is maximal: {solver.verify_maximality(graph, independent_set)}")
+print(f"I/O operations: {solver.get_io_count()}")
+print("Time-forward processing achieves O(sort(V+E)) I/O complexity!")
+```
+
 ## Documentation
 
 ### Core Framework
@@ -244,6 +282,7 @@ print("Phase-based processing demonstrates I/O efficiency!")
   - **[B-Trees](algorithms/searching/btree/README.md)** - Classic balanced trees for interactive operations
   - **[Buffer Trees](algorithms/searching/buffer_tree/README.md)** - Advanced batched processing achieving sorting bound
   - **[Priority Queues](algorithms/searching/priority_queue/README.md)** - Phase-based priority queues for batch operations
+- **[Time-Forward Processing](algorithms/time_forward_processing/README.md)** - I/O-efficient algorithms for computing local functions on DAGs with maximal independent sets
 
 ## Testing
 
@@ -259,6 +298,8 @@ make test-transpose           # Matrix transpose tests
 make test-sorting             # External merge sort tests  
 make test-btree               # B-tree tests
 make test-buffer-tree         # Buffer tree tests
+make test-time-forward        # Time-forward processing tests
+make test-maximal-independent-sets # Maximal independent sets tests
 
 # Quick verification
 make quick-test
@@ -302,6 +343,10 @@ make example-buffer-tree   # Batch operations achieving sorting bound
 
 # Priority queue operations (phase-based processing)
 make example-priority-queue # Phase-based operations achieving sorting bound
+
+# Time-forward processing algorithms
+make example-time-forward  # Time-forward processing demonstration
+make example-maximal-independent-sets # Maximal independent sets computation
 
 # Run all examples
 make examples              # All implemented algorithms

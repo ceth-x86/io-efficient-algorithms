@@ -1,6 +1,6 @@
 # Makefile for transpose_cache_aware project
 
-.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree test-priority-queue example-transpose-cache-aware example-small example-large example-transpose-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue examples clean install
+.PHONY: help test test-io test-transpose test-sorting test-btree test-buffer-tree test-priority-queue test-time-forward test-maximal-independent-sets example-transpose-cache-aware example-small example-large example-transpose-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue example-time-forward example-maximal-independent-sets examples clean install
 
 # Default target
 help:
@@ -13,6 +13,8 @@ help:
 	@echo "  test-btree  - Run B-tree tests only"
 	@echo "  test-buffer-tree - Run Buffer tree tests only"
 	@echo "  test-priority-queue - Run Priority queue tests only"
+	@echo "  test-time-forward - Run Time-forward processing tests only"
+	@echo "  test-maximal-independent-sets - Run Maximal independent sets tests only"
 	@echo "  test-cache-oblivious - Run cache-oblivious tests only"
 	@echo "  example-transpose-cache-aware - Run the built-in transpose example (4x4 matrix)"
 	@echo "  example-small - Run small matrix example (2x2)"
@@ -22,6 +24,8 @@ help:
 	@echo "  example-btree - Run B-tree example"
 	@echo "  example-buffer-tree - Run Buffer tree example"
 	@echo "  example-priority-queue - Run Priority queue example"
+	@echo "  example-time-forward - Run Time-forward processing example"
+	@echo "  example-maximal-independent-sets - Run Maximal independent sets example"
 	@echo "  examples    - Run all examples"
 	@echo "  clean       - Clean up __pycache__ directories"
 	@echo "  install     - Install dependencies"
@@ -71,6 +75,16 @@ test-priority-queue:
 	@echo "Running Priority queue tests..."
 	pytest tests/test_priority_queue.py -v
 
+# Run Time-forward processing tests only
+test-time-forward:
+	@echo "Running Time-forward processing tests..."
+	pytest tests/test_maximal_independent_sets.py -v
+
+# Run Maximal independent sets tests only
+test-maximal-independent-sets:
+	@echo "Running Maximal independent sets tests..."
+	pytest tests/test_maximal_independent_sets.py -v
+
 # Run the transpose example (built-in example in transpose_cache_aware.py)
 example-transpose-cache-aware:
 	@echo "Running transpose example..."
@@ -105,8 +119,18 @@ example-priority-queue:
 	@echo "Running Priority queue example..."
 	python algorithms/searching/priority_queue/priority_queue.py
 
+# Run Time-forward processing example
+example-time-forward:
+	@echo "Running Time-forward processing example..."
+	python algorithms/time_forward_processing/maximal_independent_sets.py
+
+# Run Maximal independent sets example
+example-maximal-independent-sets:
+	@echo "Running Maximal independent sets example..."
+	python algorithms/time_forward_processing/maximal_independent_sets.py
+
 # Run all examples
-examples: example-transpose-cache-aware example-small example-large example-transpose-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue
+examples: example-transpose-cache-aware example-small example-large example-transpose-cache-oblivious example-sorting example-btree example-buffer-tree example-priority-queue example-time-forward example-maximal-independent-sets
 
 # Clean up __pycache__ directories
 clean:

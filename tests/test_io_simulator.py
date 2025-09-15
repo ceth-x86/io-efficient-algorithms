@@ -487,9 +487,9 @@ class TestIOSimulatorCacheEviction:
 
         # Mixed operations that will cause evictions
         simulator.set_element(0, 0, 11, 6)  # Modify position 0
-        value1 = simulator.get_element(0, 1, 6)  # Read position 1
+        _ = simulator.get_element(0, 1, 6)  # Read position 1
         simulator.set_element(0, 2, 33, 6)  # Modify position 2 (may evict block 0)
-        value3 = simulator.get_element(0, 3, 6)  # Read position 3
+        _ = simulator.get_element(0, 3, 6)  # Read position 3
         simulator.set_element(0, 4, 55, 6)  # Modify position 4 (may evict other blocks)
 
         # Flush all changes
@@ -504,3 +504,133 @@ class TestIOSimulatorCacheEviction:
         assert simulator.disk[1] == 20, "Unmodified element should remain unchanged"
         assert simulator.disk[3] == 40, "Unmodified element should remain unchanged"
         assert simulator.disk[5] == 60, "Unmodified element should remain unchanged"
+
+    def test_evict_lru_block(self) -> None:
+        """Test _evict_lru_block method."""
+        simulator = IOSimulator(np.arange(10), block_size=2, memory_size=4)  # 2 blocks max
+
+        # Load blocks 0 and 1 into cache
+        simulator._read_block(0)
+        simulator._read_block(1)
+        assert len(simulator.memory) == 2
+
+        # Mark block 0 as dirty
+        simulator.dirty_blocks.add(0)
+
+        # Evict LRU block (should be block 0)
+        simulator._evict_lru_block()
+
+        # Block 0 should be evicted and no longer dirty
+        assert 0 not in simulator.memory
+        assert 0 not in simulator.dirty_blocks
+        assert len(simulator.memory) == 1
+        assert 1 in simulator.memory  # Block 1 should remain
+
+    def test_load_block_from_disk(self) -> None:
+        """Test _load_block_from_disk method."""
+        data = np.array([10, 20, 30, 40, 50, 60])
+        simulator = IOSimulator(data, block_size=2, memory_size=4)
+
+        # Load block 0 (elements 0,1)
+        block = simulator._load_block_from_disk(0)
+        np.testing.assert_array_equal(block, [10, 20])
+
+        # Load block 1 (elements 2,3)
+        block = simulator._load_block_from_disk(1)
+        np.testing.assert_array_equal(block, [30, 40])
+
+        # Load block 2 (elements 4,5)
+        block = simulator._load_block_from_disk(2)
+        np.testing.assert_array_equal(block, [50, 60])
+
+        # Load block beyond data (should return empty array)
+        block = simulator._load_block_from_disk(10)
+        assert len(block) == 0
+
+    def test_write_block_to_disk(self) -> None:
+        """Test _write_block_to_disk method."""
+        data = np.array([10, 20, 30, 40, 50, 60])
+        simulator = IOSimulator(data, block_size=2, memory_size=4)
+
+        # Load block 0 and modify it
+        block = simulator._load_block_from_disk(0)
+        block[0] = 99
+        block[1] = 88
+
+        # Write modified block back to disk
+        simulator._write_block_to_disk(0, block)
+
+        # Verify changes were written to disk
+        assert simulator.disk[0] == 99
+        assert simulator.disk[1] == 88
+        assert simulator.disk[2] == 30  # Other elements unchanged
+
+    def test_write_block_to_disk_size_mismatch(self) -> None:
+        """Test _write_block_to_disk with size mismatch."""
+        data = np.array([10, 20, 30, 40, 50])
+        simulator = IOSimulator(data, block_size=3, memory_size=6)
+
+        # Load block 1 (elements 3,4) - only 2 elements
+        block = simulator._load_block_from_disk(1)
+        block[0] = 99
+        block[1] = 88
+
+        # Write back (should handle size mismatch)
+        simulator._write_block_to_disk(1, block)
+
+        # Verify changes were written correctly
+        assert simulator.disk[3] == 99
+        assert simulator.disk[4] == 88
+
+    def test_get_block_id(self) -> None:
+        """Test _get_block_id method."""
+        simulator = IOSimulator(np.arange(20), block_size=3, memory_size=9)
+
+        # Test various indices
+        assert simulator._get_block_id(0) == 0  # First element in block 0
+        assert simulator._get_block_id(2) == 0  # Last element in block 0
+        assert simulator._get_block_id(3) == 1  # First element in block 1
+        assert simulator._get_block_id(5) == 1  # Last element in block 1
+        assert simulator._get_block_id(6) == 2  # First element in block 2
+        assert simulator._get_block_id(19) == 6  # Last element in block 6
+
+    def test_get_index_in_block(self) -> None:
+        """Test _get_index_in_block method."""
+        simulator = IOSimulator(np.arange(20), block_size=3, memory_size=9)
+
+        # Test various indices
+        assert simulator._get_index_in_block(0) == 0  # First element in block
+        assert simulator._get_index_in_block(2) == 2  # Last element in block
+        assert simulator._get_index_in_block(3) == 0  # First element in next block
+        assert simulator._get_index_in_block(5) == 2  # Last element in next block
+        assert simulator._get_index_in_block(6) == 0  # First element in next block
+        assert simulator._get_index_in_block(19) == 1  # Second element in last block
+
+    def test_is_valid_index(self) -> None:
+        """Test _is_valid_index method."""
+        simulator = IOSimulator(np.arange(10), block_size=3, memory_size=9)
+
+        # Test valid indices
+        assert simulator._is_valid_index(0)  # First element
+        assert simulator._is_valid_index(5)  # Middle element
+        assert simulator._is_valid_index(9)  # Last element
+
+        # Test invalid indices
+        assert not simulator._is_valid_index(-1)  # Negative index
+        assert not simulator._is_valid_index(10)  # Beyond array
+        assert not simulator._is_valid_index(100)  # Way beyond array
+
+    def test_get_flat_index(self) -> None:
+        """Test _get_flat_index method."""
+        simulator = IOSimulator(np.arange(20), block_size=3, memory_size=9)
+
+        # Test various matrix positions
+        assert simulator._get_flat_index(0, 0, 4) == 0  # row 0, col 0 in 4-col matrix
+        assert simulator._get_flat_index(0, 1, 4) == 1  # row 0, col 1 in 4-col matrix
+        assert simulator._get_flat_index(1, 0, 4) == 4  # row 1, col 0 in 4-col matrix
+        assert simulator._get_flat_index(1, 3, 4) == 7  # row 1, col 3 in 4-col matrix
+        assert simulator._get_flat_index(2, 2, 4) == 10  # row 2, col 2 in 4-col matrix
+
+        # Test with different column counts
+        assert simulator._get_flat_index(0, 0, 5) == 0  # row 0, col 0 in 5-col matrix
+        assert simulator._get_flat_index(1, 2, 5) == 7  # row 1, col 2 in 5-col matrix
