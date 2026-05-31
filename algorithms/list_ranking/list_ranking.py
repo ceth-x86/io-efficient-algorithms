@@ -121,30 +121,68 @@ def calculate_restored_ranks(sim, dm, vf_join):
     return vf_out
 
 def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
+    """
+    Recursively ranks the linked list using the randomized independent set compression algorithm.
+    
+    This function implements the optimal external memory list ranking algorithm:
+    1. Selects an independent set of nodes to remove (expected size: N/4).
+    2. Compresses the list by updating the successor pointers of surviving nodes to skip
+       the removed nodes, accumulating the edge weights.
+    3. Recursively ranks the compressed list (of size ~3/4 N).
+    4. Restores the ranks of the removed nodes using the ranks of their predecessors.
+    
+    All steps are done using sequential operations (sorting and joining) to match the
+    Aggarwal-Vitter external memory complexity bounds, completely avoiding random I/O.
+    """
     n = vf_in.size
+    
+    # -------------------------------------------------------------------------
+    # Base Case: The active list size fits in internal memory (N <= M)
+    # -------------------------------------------------------------------------
     if n <= M:
+        # If it fits in memory, solve it using a standard in-memory pointer-chasing pass
+        # which is fast and takes only O(N/B) I/Os.
         return solve_base_case(sim, dm, vf_in, head_id)
         
     while True:
-        # 1. Assign random bits
+        # ---------------------------------------------------------------------
+        # Phase 1: Independent Set Selection
+        # ---------------------------------------------------------------------
+        # We assign a random bit (0 or 1) to each node.
+        # A node is selected for removal if:
+        #   - Its bit is 1.
+        #   - Its successor's bit is 0.
+        # This guarantees that:
+        #   1. No two adjacent nodes are removed (independent set property).
+        #   2. The head of the list is never removed (since its bit is hardcoded to 0).
+        #   3. On average, 1/4 of all nodes are removed.
+        
+        # Step 1.1: Generate a file of random bits for each node.
         vf_rnd = VirtualFile(sim, n, 2)
         for i in range(n):
             rec = vf_in.read_record(i)
             node_id = rec[0]
             if node_id == head_id:
-                bit = 0
+                bit = 0  # Guarantee the head node is never removed
             else:
                 bit = random.choice([0, 1])
             vf_rnd.write_record(i, [node_id, bit])
             
+        # Step 1.2: Sort both files by node_id to align nodes with their assigned bits.
         vf_L_sort_node = external_sort(sim, vf_in, key_index=0, M=M)
         vf_Rnd_sort_node = external_sort(sim, vf_rnd, key_index=0, M=M)
         
+        # Step 1.3: Inner join to attach my_bit to each node: [node_id, next_id, weight, my_bit]
         vf_L_with_my_bit = merge_join(sim, vf_L_sort_node, 0, vf_Rnd_sort_node, 0, 'inner')
+        
+        # Step 1.4: Sort the list by next_id to prepare for joining with the successor's bit.
         vf_L_sort_next = external_sort(sim, vf_L_with_my_bit, key_index=1, M=M)
         
+        # Step 1.5: Left outer join on next_id = node_id to get the successor's bit (next_bit).
+        # If a node points to -1 (end of list), it won't find a match, and gets default next_bit = 1.
         vf_L_flags = merge_join(sim, vf_L_sort_next, 1, vf_Rnd_sort_node, 0, 'left_outer', default_val=1)
         
+        # Step 1.6: Split nodes into 'removed' and 'surviving' sets based on the condition.
         temp_rem = VirtualFile(sim, n, 3)
         temp_surv = VirtualFile(sim, n, 3)
         num_rem = 0
@@ -153,6 +191,7 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
         for i in range(n):
             rec = vf_L_flags.read_record(i)
             node_id, next_id, weight, my_bit, next_bit = rec
+            # Independent set condition: my_bit == 1 and next_bit == 0
             if my_bit == 1 and next_bit == 0:
                 temp_rem.write_record(num_rem, [node_id, next_id, weight])
                 num_rem += 1
@@ -160,7 +199,7 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
                 temp_surv.write_record(num_surv, [node_id, next_id, weight])
                 num_surv += 1
                 
-        # Close temp flags files
+        # Clean up temporary resources used during the independent set detection.
         vf_rnd.close()
         vf_L_sort_node.close()
         vf_Rnd_sort_node.close()
@@ -168,8 +207,10 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
         vf_L_sort_next.close()
         vf_L_flags.close()
         
+        # Ensure we successfully selected a non-empty independent set of nodes to remove.
+        # Otherwise, retry with a new set of random bits.
         if num_rem > 0:
-            # Allocate exact sized files
+            # Copy elements to exact-sized files to free up disk space in the simulator.
             vf_removed = VirtualFile(sim, num_rem, 3)
             for i in range(num_rem):
                 vf_removed.write_record(i, temp_rem.read_record(i))
@@ -185,48 +226,86 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
         temp_rem.close()
         temp_surv.close()
         
-    # 2. Update Surviving links (compression)
+    # -------------------------------------------------------------------------
+    # Phase 2: Update Surviving Links (List Compression)
+    # -------------------------------------------------------------------------
+    # We now update the next pointers of surviving nodes that point to removed nodes.
+    # If surviving node A points to removed node B, and B points to C, we update
+    # A's pointer to point to C directly, and update the edge weight to weight(A->B) + weight(B->C).
+    #
+    # We do this using a left outer join of surviving nodes (sorted by next_id)
+    # against removed nodes (sorted by node_id).
     vf_surviving_sort_next = external_sort(sim, vf_surviving, key_index=1, M=M)
     vf_removed_sort_node = external_sort(sim, vf_removed, key_index=0, M=M)
     
+    # Left outer join: match surviving successor (key1=1) against removed node (key2=0).
     vf_surv_rem_join = merge_join(sim, vf_surviving_sort_next, 1, vf_removed_sort_node, 0, 'left_outer', default_val=-1)
+    
+    # Update pointers and weights for the matches
     vf_L_prime = resolve_surviving_links(sim, dm, vf_surv_rem_join)
     
     vf_surviving_sort_next.close()
     vf_surv_rem_join.close()
     
-    # 3. Recursive Call
+    # -------------------------------------------------------------------------
+    # Phase 3: Recursive Call
+    # -------------------------------------------------------------------------
+    # Solve the list ranking problem recursively on the compressed list vf_L_prime.
+    # Since we removed an expected N/4 nodes, the input size is reduced by a constant fraction.
+    # This guarantees the depth of recursion is O(log N) with high probability,
+    # and the total recursive cost is dominated by the top-level call: O(Sort(N)).
     vf_ranks_prime = list_ranking_rec(sim, dm, vf_L_prime, M, head_id, depth + 1)
     vf_L_prime.close()
     
-    # 4. Restore Ranks
+    # -------------------------------------------------------------------------
+    # Phase 4: Restore Ranks (Reranking)
+    # -------------------------------------------------------------------------
+    # We must calculate the ranks of the removed nodes.
+    # A removed node (child) is always pointed to by a surviving node (parent).
+    # Its rank is simply: rank(child) = rank(parent) + weight(parent -> child).
+    #
+    # Step 4.1: Find parent-child links. We sort surviving nodes by next_id,
+    # and inner join them with removed nodes sorted by node_id.
     vf_surviving_sort_next_re = external_sort(sim, vf_surviving, key_index=1, M=M)
     vf_parent_link_join = merge_join(sim, vf_surviving_sort_next_re, 1, vf_removed_sort_node, 0, 'inner')
+    
+    # Extract the links: [parent_id, child_id, parent_weight]
     vf_parent_link = extract_parent_link(sim, dm, vf_parent_link_join)
     
     vf_surviving_sort_next_re.close()
     vf_removed_sort_node.close()
     vf_parent_link_join.close()
     
+    # Step 4.2: To fetch the parent's rank, we sort the parent links by parent_id,
+    # and sort the recursively computed ranks file by node_id (parent_id).
     vf_parent_link_sort_parent = external_sort(sim, vf_parent_link, key_index=0, M=M)
     vf_parent_link.close()
     
     vf_ranks_prime_sort = external_sort(sim, vf_ranks_prime, key_index=0, M=M)
     
+    # Step 4.3: Inner join parent links with parent ranks:
+    # [parent_id, child_id, parent_weight] JOIN [parent_id, parent_rank]
     vf_restored_ranks_join = merge_join(sim, vf_parent_link_sort_parent, 0, vf_ranks_prime_sort, 0, 'inner')
+    
+    # Calculate child ranks: rank(child) = parent_rank + parent_weight
     vf_restored_ranks = calculate_restored_ranks(sim, dm, vf_restored_ranks_join)
     
     vf_parent_link_sort_parent.close()
     vf_ranks_prime_sort.close()
     vf_restored_ranks_join.close()
     
-    # 5. Merge ranks: vf_ranks_prime + vf_restored_ranks -> vf_out
+    # -------------------------------------------------------------------------
+    # Phase 5: Merge ranks of surviving and removed nodes
+    # -------------------------------------------------------------------------
+    # Concatenate the computed ranks of surviving nodes (vf_ranks_prime)
+    # and the restored ranks of removed nodes (vf_restored_ranks) into the output file.
     vf_out = VirtualFile(sim, vf_ranks_prime.size + vf_restored_ranks.size, 2)
     for i in range(vf_ranks_prime.size):
         vf_out.write_record(i, vf_ranks_prime.read_record(i))
     for i in range(vf_restored_ranks.size):
         vf_out.write_record(vf_ranks_prime.size + i, vf_restored_ranks.read_record(i))
         
+    # Close files and clean up resources
     vf_removed.close()
     vf_surviving.close()
     vf_ranks_prime.close()
