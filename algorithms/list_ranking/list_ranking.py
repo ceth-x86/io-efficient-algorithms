@@ -40,6 +40,12 @@ def find_head_external(sim, dm, vf_in, M):
         default_val=-999
     )
     
+    # Identify the head of the list:
+    # In a valid linked list, the head node is the only node that has no incoming pointers
+    # (i.e. no other node's next_id points to it). Consequently, it is the only record
+    # in the left outer join result that failed to find a match on the right side,
+    # leaving its last field padded with the default value of -999.
+    # We scan the joined file sequentially to find this padded record and extract its node ID.
     head_id = None
     for i in range(vf_join.size):
         rec = vf_join.read_record(i)
