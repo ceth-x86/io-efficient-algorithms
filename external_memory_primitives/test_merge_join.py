@@ -1,96 +1,11 @@
 import sys
 from pathlib import Path
-import random
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent))
 
-from algorithms.list_ranking.io_utils import external_sort, merge_join
+from external_memory_primitives.merge_join import merge_join
 from io_simulator import VirtualDisk, IOSimulator, VirtualFile
-
-
-class TestExternalSort:
-    """Test cases for the external_sort utility."""
-
-    def test_sort_empty_file(self):
-        vd = VirtualDisk(size=1000)
-        sim = IOSimulator(vd, block_size=3, cache_memory_size=9)
-        vf_in = VirtualFile(sim, 0, 3)
-        vf_out = external_sort(sim, vd, vf_in, key_index=0, M=3)
-        
-        assert vf_out.size == 0
-        vf_in.close()
-        vf_out.close()
-
-    @pytest.mark.parametrize("key_index", [0, 1, 2])
-    def test_sort_in_memory(self, key_index: int):
-        """
-        Tests sorting when the entire dataset fits within memory (size <= M).
-        This executes the single sorted run (chunk) pathway without multi-way merging.
-        """
-        # Set random seed
-        random.seed(42)
-        
-        data = [[random.randint(1, 100) for _ in range(3)] for _ in range(10)]
-        vd = VirtualDisk(size=1000)
-        sim = IOSimulator(vd, block_size=3, cache_memory_size=60) # M=20 records capacity
-        
-        vf_in = VirtualFile(sim, len(data), 3)
-        for i, rec in enumerate(data):
-            vf_in.write_record(i, rec)
-        sim.flush_memory()
-        
-        vf_out = external_sort(sim, vd, vf_in, key_index=key_index, M=20)
-        sim.flush_memory()
-        
-        expected = sorted(data, key=lambda x: x[key_index])
-        actual = [vf_out.read_record(i) for i in range(len(data))]
-        
-        assert actual == expected
-        vf_in.close()
-        vf_out.close()
-
-    @pytest.mark.parametrize(
-        ("file_size", "memory_records", "block_size"),
-        [
-            (100, 15, 3),
-            (250, 20, 5),
-        ]
-    )
-    def test_sort_external(self, file_size: int, memory_records: int, block_size: int):
-        """
-        Tests sorting when the dataset is larger than memory (size > M).
-        This forces creation of multiple sorted runs on disk and triggers the
-        full multi-way external merge using a priority queue.
-        """
-        # Set random seed
-        random.seed(123)
-        
-        record_size = 3
-        data = [[random.randint(1, 1000) for _ in range(record_size)] for _ in range(file_size)]
-        vd = VirtualDisk(size=10000)
-        
-        sim = IOSimulator(
-            vd, 
-            block_size=block_size * record_size, 
-            cache_memory_size=memory_records * record_size
-        )
-        
-        vf_in = VirtualFile(sim, len(data), record_size)
-        for i, rec in enumerate(data):
-            vf_in.write_record(i, rec)
-        sim.flush_memory()
-        
-        # Sort by key_index = 0
-        vf_out = external_sort(sim, vd, vf_in, key_index=0, M=memory_records)
-        sim.flush_memory()
-        
-        expected = sorted(data, key=lambda x: x[0])
-        actual = [vf_out.read_record(i) for i in range(file_size)]
-        
-        assert actual == expected
-        vf_in.close()
-        vf_out.close()
 
 
 class TestMergeJoin:
@@ -115,7 +30,7 @@ class TestMergeJoin:
             
         sim.flush_memory()
         
-        vf_out = merge_join(sim, vd, vf1, key1_index=0, vf2=vf2, key2_index=0, join_type='inner')
+        vf_out = merge_join(sim, vf1, key1_index=0, vf2=vf2, key2_index=0, join_type='inner')
         sim.flush_memory()
         
         # Expected: [[2, 20, 100], [4, 40, 400]]
@@ -146,7 +61,7 @@ class TestMergeJoin:
         sim.flush_memory()
         
         vf_out = merge_join(
-            sim, vd, vf1, key1_index=0, vf2=vf2, key2_index=0, 
+            sim, vf1, key1_index=0, vf2=vf2, key2_index=0, 
             join_type='left_outer', default_val=-999
         )
         sim.flush_memory()
@@ -172,22 +87,22 @@ class TestMergeJoin:
         sim.flush_memory()
         
         # 1. Empty left, nonempty right (inner) -> empty
-        vf_out1 = merge_join(sim, vd, vf_empty, 0, vf_nonempty, 0, 'inner')
+        vf_out1 = merge_join(sim, vf_empty, 0, vf_nonempty, 0, 'inner')
         assert vf_out1.size == 0
         vf_out1.close()
         
         # 2. Empty left, nonempty right (left_outer) -> empty (since left is size 0)
-        vf_out2 = merge_join(sim, vd, vf_empty, 0, vf_nonempty, 0, 'left_outer')
+        vf_out2 = merge_join(sim, vf_empty, 0, vf_nonempty, 0, 'left_outer')
         assert vf_out2.size == 0
         vf_out2.close()
         
         # 3. Nonempty left, empty right (inner) -> empty
-        vf_out3 = merge_join(sim, vd, vf_nonempty, 0, vf_empty, 0, 'inner')
+        vf_out3 = merge_join(sim, vf_nonempty, 0, vf_empty, 0, 'inner')
         assert vf_out3.size == 0
         vf_out3.close()
         
         # 4. Nonempty left, empty right (left_outer) -> nonempty padded
-        vf_out4 = merge_join(sim, vd, vf_nonempty, 0, vf_empty, 0, 'left_outer', default_val=-5)
+        vf_out4 = merge_join(sim, vf_nonempty, 0, vf_empty, 0, 'left_outer', default_val=-5)
         assert vf_out4.size == 2
         assert vf_out4.read_record(0) == [1, 10, -5]
         assert vf_out4.read_record(1) == [2, 20, -5]
@@ -215,7 +130,7 @@ class TestMergeJoin:
             
         sim.flush_memory()
         
-        vf_out = merge_join(sim, vd, vf1, key1_index=1, vf2=vf2, key2_index=0, join_type='inner')
+        vf_out = merge_join(sim, vf1, key1_index=1, vf2=vf2, key2_index=0, join_type='inner')
         sim.flush_memory()
         
         # Output record size = 3 + 2 - 1 = 4
@@ -227,6 +142,93 @@ class TestMergeJoin:
         actual = [vf_out.read_record(i) for i in range(vf_out.size)]
         
         assert actual == expected
+        
+        vf1.close()
+        vf2.close()
+        vf_out.close()
+
+    @pytest.mark.parametrize(
+        ("file_size", "expected_io"),
+        [
+            (100, 181),
+            (300, 530),
+            (500, 881),
+            (1000, 1756),
+        ]
+    )
+    def test_merge_join_io_complexity(self, file_size: int, expected_io: int):
+        """
+        Validates the block I/O complexity of merge_join for different file sizes,
+        with constant memory size (cache limit) and block size.
+
+        Theoretical Context:
+        In the External Memory model, the theoretical I/O complexity of a Merge Join
+        on two pre-sorted files of size N_1 and N_2 is:
+            O( (N_1 / B) + (N_2 / B) + (N_out / B) ) block I/Os.
+        
+        Where:
+            N_1, N_2 = number of records in the input files
+            N_out = number of records in the output file
+            B = block size in records
+
+        In our implementation:
+        1. We scan vf1 sequentially (taking N_1 / B read block I/Os).
+        2. We scan vf2 sequentially (taking N_2 / B read block I/Os).
+        3. We write the joined result to a temporary file of size N_out (taking N_out / B write block I/Os).
+        4. We copy the temporary file to the final output file of exact size (taking N_out / B read block I/Os and N_out / B write block I/Os).
+
+        Therefore, the total I/O complexity is:
+            Theta( (N_1 + N_2 + 3 * N_out) / B ) block I/Os.
+
+        Under a constant block size B and cache size, if the input sizes scale with N
+        and the output size scales linearly with N (e.g., N_1 = N, N_2 = N/2, N_out = N/2),
+        the total I/O cost simplifies to:
+            O(N) - i.e., strictly linear growth with respect to the input size N.
+
+        This is verified by the empirical test data:
+            - N = 100  => 181 I/Os
+            - N = 300  => 530 I/Os  (~ 3x increase)
+            - N = 500  => 881 I/Os  (~ 5x increase)
+            - N = 1000 => 1756 I/Os (~ 10x increase)
+        """
+        record_size = 2
+        block_records = 3
+        memory_records = 30
+        epsilon = 0.05
+        
+        vd = VirtualDisk(size=10000)
+        sim = IOSimulator(
+            vd,
+            block_size=block_records * record_size,
+            cache_memory_size=memory_records * record_size
+        )
+        
+        # Prepare two sorted files
+        # Left: [0, 0], [1, 10], ..., [N-1, (N-1)*10]
+        # Right: [0, 0], [2, 200], ..., [2*i, 2*i*100] (half matches)
+        data1 = [[i, i * 10] for i in range(file_size)]
+        data2 = [[i, i * 100] for i in range(0, file_size, 2)]
+        
+        vf1 = VirtualFile(sim, len(data1), record_size)
+        for i, rec in enumerate(data1):
+            vf1.write_record(i, rec)
+            
+        vf2 = VirtualFile(sim, len(data2), record_size)
+        for i, rec in enumerate(data2):
+            vf2.write_record(i, rec)
+            
+        sim.flush_memory()
+        
+        # Reset IO count before executing the join
+        sim.io_count = 0
+        
+        vf_out = merge_join(sim, vf1, key1_index=0, vf2=vf2, key2_index=0, join_type='inner')
+        sim.flush_memory()
+        
+        # Verify the number of I/O operations is within 5% tolerance of expected
+        assert abs(sim.io_count - expected_io) <= expected_io * epsilon, (
+            f"Expected around {expected_io} I/Os, got {sim.io_count}"
+        )
         
         vf1.close()
         vf2.close()

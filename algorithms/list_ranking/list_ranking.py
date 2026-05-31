@@ -3,12 +3,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from io_simulator import VirtualFile
-if __package__ is None or __package__ == "":
-    # Direct execution: e.g. python3 main.py (from within directory)
-    from io_utils import external_sort, merge_join
-else:
-    # Module execution: e.g. python3 -m algorithms.list_ranking.main (from root)
-    from .io_utils import external_sort, merge_join
+from external_memory_primitives import external_sort, merge_join
 
 def find_head_external(sim, dm, vf_in, M):
     """
@@ -29,15 +24,14 @@ def find_head_external(sim, dm, vf_in, M):
     # Therefore, we sort the file twice:
     # 1. By node ID (index 0) to align the node records.
     # 2. By next ID (index 1) to align the pointer destinations.
-    vf_sort_node = external_sort(sim, dm, vf_in, key_index=0, M=M)
-    vf_sort_next = external_sort(sim, dm, vf_in, key_index=1, M=M)
+    vf_sort_node = external_sort(sim, vf_in, key_index=0, M=M)
+    vf_sort_next = external_sort(sim, vf_in, key_index=1, M=M)
     
     # Perform a left outer join of all nodes on node_id (key1_index=0) against next pointers (key2_index=1).
     # Since it is a left outer join, any node that has no incoming pointer (i.e. is not pointed to by any node)
     # will not match any key in vf_sort_next, and will be padded with the default_val (-999).
     vf_join = merge_join(
         sim, 
-        dm, 
         vf1=vf_sort_node, 
         key1_index=0, 
         vf2=vf_sort_next, 
@@ -137,13 +131,13 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
                 bit = random.choice([0, 1])
             vf_rnd.write_record(i, [node_id, bit])
             
-        vf_L_sort_node = external_sort(sim, dm, vf_in, key_index=0, M=M)
-        vf_Rnd_sort_node = external_sort(sim, dm, vf_rnd, key_index=0, M=M)
+        vf_L_sort_node = external_sort(sim, vf_in, key_index=0, M=M)
+        vf_Rnd_sort_node = external_sort(sim, vf_rnd, key_index=0, M=M)
         
-        vf_L_with_my_bit = merge_join(sim, dm, vf_L_sort_node, 0, vf_Rnd_sort_node, 0, 'inner')
-        vf_L_sort_next = external_sort(sim, dm, vf_L_with_my_bit, key_index=1, M=M)
+        vf_L_with_my_bit = merge_join(sim, vf_L_sort_node, 0, vf_Rnd_sort_node, 0, 'inner')
+        vf_L_sort_next = external_sort(sim, vf_L_with_my_bit, key_index=1, M=M)
         
-        vf_L_flags = merge_join(sim, dm, vf_L_sort_next, 1, vf_Rnd_sort_node, 0, 'left_outer', default_val=1)
+        vf_L_flags = merge_join(sim, vf_L_sort_next, 1, vf_Rnd_sort_node, 0, 'left_outer', default_val=1)
         
         temp_rem = VirtualFile(sim, n, 3)
         temp_surv = VirtualFile(sim, n, 3)
@@ -186,10 +180,10 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
         temp_surv.close()
         
     # 2. Update Surviving links (compression)
-    vf_surviving_sort_next = external_sort(sim, dm, vf_surviving, key_index=1, M=M)
-    vf_removed_sort_node = external_sort(sim, dm, vf_removed, key_index=0, M=M)
+    vf_surviving_sort_next = external_sort(sim, vf_surviving, key_index=1, M=M)
+    vf_removed_sort_node = external_sort(sim, vf_removed, key_index=0, M=M)
     
-    vf_surv_rem_join = merge_join(sim, dm, vf_surviving_sort_next, 1, vf_removed_sort_node, 0, 'left_outer', default_val=-1)
+    vf_surv_rem_join = merge_join(sim, vf_surviving_sort_next, 1, vf_removed_sort_node, 0, 'left_outer', default_val=-1)
     vf_L_prime = resolve_surviving_links(sim, dm, vf_surv_rem_join)
     
     vf_surviving_sort_next.close()
@@ -200,20 +194,20 @@ def list_ranking_rec(sim, dm, vf_in, M, head_id, depth=0):
     vf_L_prime.close()
     
     # 4. Restore Ranks
-    vf_surviving_sort_next_re = external_sort(sim, dm, vf_surviving, key_index=1, M=M)
-    vf_parent_link_join = merge_join(sim, dm, vf_surviving_sort_next_re, 1, vf_removed_sort_node, 0, 'inner')
+    vf_surviving_sort_next_re = external_sort(sim, vf_surviving, key_index=1, M=M)
+    vf_parent_link_join = merge_join(sim, vf_surviving_sort_next_re, 1, vf_removed_sort_node, 0, 'inner')
     vf_parent_link = extract_parent_link(sim, dm, vf_parent_link_join)
     
     vf_surviving_sort_next_re.close()
     vf_removed_sort_node.close()
     vf_parent_link_join.close()
     
-    vf_parent_link_sort_parent = external_sort(sim, dm, vf_parent_link, key_index=0, M=M)
+    vf_parent_link_sort_parent = external_sort(sim, vf_parent_link, key_index=0, M=M)
     vf_parent_link.close()
     
-    vf_ranks_prime_sort = external_sort(sim, dm, vf_ranks_prime, key_index=0, M=M)
+    vf_ranks_prime_sort = external_sort(sim, vf_ranks_prime, key_index=0, M=M)
     
-    vf_restored_ranks_join = merge_join(sim, dm, vf_parent_link_sort_parent, 0, vf_ranks_prime_sort, 0, 'inner')
+    vf_restored_ranks_join = merge_join(sim, vf_parent_link_sort_parent, 0, vf_ranks_prime_sort, 0, 'inner')
     vf_restored_ranks = calculate_restored_ranks(sim, dm, vf_restored_ranks_join)
     
     vf_parent_link_sort_parent.close()
@@ -249,6 +243,6 @@ def list_ranking(sim, dm, vf_in, M):
         raise ValueError("Could not find list head!")
         
     vf_temp_ranks = list_ranking_rec(sim, dm, vf_in, M, head_id, 0)
-    vf_out = external_sort(sim, dm, vf_temp_ranks, key_index=0, M=M)
+    vf_out = external_sort(sim, vf_temp_ranks, key_index=0, M=M)
     vf_temp_ranks.close()
     return vf_out
