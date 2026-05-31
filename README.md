@@ -14,6 +14,7 @@ This repository contains implementations of tasks and algorithms from the Course
 - **Priority Queues**: Phase-based priority queues achieving optimal I/O complexity for batch operations.
 - **Time-Forward Processing**: I/O-efficient algorithms for computing local functions on DAGs.
 - **Maximal Independent Sets**: Graph algorithms using time-forward processing for optimal I/O complexity.
+- **External Memory Stack**: A LIFO data structure utilizing a 2B RAM hysteresis buffer to achieve O(1/B) amortized I/O complexity.
 
 ## Algorithm Documentation
 
@@ -25,6 +26,11 @@ This repository contains implementations of tasks and algorithms from the Course
   - **[Buffer Trees](algorithms/searching/buffer_tree/README.md)**
   - **[Priority Queues](algorithms/searching/priority_queue/README.md)**
 - **[Time-Forward Processing](algorithms/time_forward_processing/README.md)**
+- **[External Memory Primitives](external_memory_primitives/)**: Root package containing:
+  - **[External Merge Sort](external_memory_primitives/external_sort.py)**
+  - **[Merge Join](external_memory_primitives/merge_join.py)**
+- **[External Memory Data Structures](data_structures/)**:
+  - **[External Stack](data_structures/stack/README.md)**
 
 ## I/O Model and Framework
 
@@ -55,6 +61,9 @@ The core simulation framework, `IOSimulator`, models this hierarchy:
 │   ├── sorting/                      # External memory sorting algorithms
 │   ├── time_forward_processing/      # Time-forward graph processing framework
 │   └── transpose/                    # Matrix transposition algorithms
+├── data_structures/                  # Fundamental external memory structures
+│   └── stack/                        # External stack with hysteresis buffering
+├── external_memory_primitives/       # Root package with external sort & join primitives
 ├── io_simulator/                     # Core simulation and caching framework
 └── tests/                            # Comprehensive unit tests
 ```
@@ -229,6 +238,26 @@ print(f"Is maximal: {solver.verify_maximality(graph, independent_set)}")
 print(f"I/O operations: {solver.get_io_count()}")
 ```
 
+#### External Memory Stack
+
+```python
+from io_simulator import IOSimulator, VirtualDisk
+from data_structures.stack import ExternalStack
+
+# Setup external storage
+vd = VirtualDisk(size=1000)
+sim = IOSimulator(vd, block_size=3, cache_memory_size=30)
+
+# Create stack
+stack = ExternalStack(sim)
+
+# Push and pop
+stack.push(10)
+stack.push(20)
+val = stack.pop()  # 20
+stack.close()
+```
+
 ## Running Example Demonstrations
 
 You can execute each algorithm implementation file directly to see its demo run:
@@ -251,6 +280,15 @@ You can execute each algorithm implementation file directly to see its demo run:
 
 # Run Maximal Independent Sets example
 .venv/bin/python algorithms/time_forward_processing/maximal_independent_sets.py
+
+# Run External Memory Stack example
+.venv/bin/python data_structures/stack/examples/stack_example.py
+
+# Run External Merge Sort Primitives example
+.venv/bin/python external_memory_primitives/examples/sorting_example.py
+
+# Run Merge Join Primitives example
+.venv/bin/python external_memory_primitives/examples/joining_example.py
 ```
 
 ## Testing
@@ -271,6 +309,9 @@ To run the complete test suite, use pytest:
 .venv/bin/pytest tests/test_transpose_cache_aware.py
 .venv/bin/pytest tests/test_transpose_cache_oblivious.py
 .venv/bin/pytest io_simulator/test_simulator.py
+.venv/bin/pytest data_structures/stack/test_stack.py
+.venv/bin/pytest external_memory_primitives/test_external_sort.py
+.venv/bin/pytest external_memory_primitives/test_merge_join.py
 ```
 
 ## License
