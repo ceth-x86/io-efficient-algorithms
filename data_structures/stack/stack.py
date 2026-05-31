@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 
 # Add project root to sys.path to allow importing from io_simulator
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 class ExternalStack:
     """

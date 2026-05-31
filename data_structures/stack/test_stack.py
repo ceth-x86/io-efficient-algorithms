@@ -2,9 +2,9 @@ import sys
 from pathlib import Path
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from external_memory_primitives import ExternalStack
+from data_structures.stack import ExternalStack
 from io_simulator import VirtualDisk, IOSimulator
 
 class TestExternalStack:
