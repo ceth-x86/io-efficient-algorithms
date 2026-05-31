@@ -64,8 +64,7 @@ The core simulation framework, `IOSimulator`, models this hierarchy:
 ├── data_structures/                  # Fundamental external memory structures
 │   └── stack/                        # External stack with hysteresis buffering
 ├── external_memory_primitives/       # Root package with external sort & join primitives
-├── io_simulator/                     # Core simulation and caching framework
-└── tests/                            # Comprehensive unit tests
+└── io_simulator/                     # Core simulation and caching framework
 ```
 
 ## Installation and Usage
@@ -300,14 +299,14 @@ To run the complete test suite, use pytest:
 .venv/bin/pytest
 
 # Run specific test suites
-.venv/bin/pytest tests/test_list_ranking.py
-.venv/bin/pytest tests/test_btree.py
-.venv/bin/pytest tests/test_buffer_tree.py
-.venv/bin/pytest tests/test_priority_queue.py
-.venv/bin/pytest tests/test_external_merge_sort.py
-.venv/bin/pytest tests/test_maximal_independent_sets.py
-.venv/bin/pytest tests/test_transpose_cache_aware.py
-.venv/bin/pytest tests/test_transpose_cache_oblivious.py
+.venv/bin/pytest algorithms/list_ranking/test_list_ranking.py
+.venv/bin/pytest algorithms/searching/btree/test_btree.py
+.venv/bin/pytest algorithms/searching/buffer_tree/test_buffer_tree.py
+.venv/bin/pytest algorithms/searching/priority_queue/test_priority_queue.py
+.venv/bin/pytest algorithms/sorting/test_external_merge_sort.py
+.venv/bin/pytest algorithms/time_forward_processing/test_maximal_independent_sets.py
+.venv/bin/pytest algorithms/transpose/test_transpose_cache_aware.py
+.venv/bin/pytest algorithms/transpose/test_transpose_cache_oblivious.py
 .venv/bin/pytest io_simulator/test_simulator.py
 .venv/bin/pytest data_structures/stack/test_stack.py
 .venv/bin/pytest external_memory_primitives/test_external_sort.py
