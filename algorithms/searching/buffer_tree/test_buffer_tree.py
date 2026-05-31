@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from algorithms.searching.buffer_tree.buffer_tree import BufferTree, Operation, OperationType
 from io_simulator import IOSimulator, VirtualDisk
@@ -17,7 +17,7 @@ class TestBufferTree:
     def disk_simulator(self) -> IOSimulator:
         """Create a large disk simulator for buffer tree storage."""
         vd = VirtualDisk(size=50000)
-        return IOSimulator(vd, block_size=50, memory_size=200)
+        return IOSimulator(vd, block_size=50, cache_memory_size=200)
 
     @pytest.fixture
     def buffer_tree(self, disk_simulator: IOSimulator) -> BufferTree:
@@ -150,7 +150,7 @@ class TestBufferTree:
         for size in sizes:
             # Create fresh buffer tree for each test
             vd = VirtualDisk(size=50000)
-            disk = IOSimulator(vd, block_size=50, memory_size=200)
+            disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
             test_tree = BufferTree(disk, memory_size=200, block_size=50, degree=8)
 
             keys = list(range(1, size + 1))
@@ -189,7 +189,7 @@ class TestBufferTree:
         """Test that buffer overflows are handled correctly."""
         # Create small capacity tree to test overflow
         vd = VirtualDisk(size=10000)
-        disk = IOSimulator(vd, block_size=10, memory_size=50)
+        disk = IOSimulator(vd, block_size=10, cache_memory_size=50)
         small_tree = BufferTree(disk, memory_size=50, block_size=10, degree=4)
 
         # Insert enough operations to trigger buffer flushes

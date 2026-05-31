@@ -210,7 +210,7 @@ if __name__ == "__main__":
     from io_simulator import VirtualDisk
     vd = VirtualDisk(size=16)
     vd.disk = list(A.flatten())
-    disk = IOSimulator(vd, block_size=2, memory_size=8)
+    disk = IOSimulator(vd, block_size=2, cache_memory_size=8)
 
     # Perform transpose
     result_flat, io_count = transpose_cache_oblivious(disk, n, n)

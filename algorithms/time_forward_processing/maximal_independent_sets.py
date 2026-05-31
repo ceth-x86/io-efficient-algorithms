@@ -237,7 +237,7 @@ if __name__ == "__main__":
     # Create disk simulator for external memory
     from io_simulator import VirtualDisk
     vd = VirtualDisk(size=50000)
-    disk = IOSimulator(vd, block_size=50, memory_size=200)
+    disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
 
     # Create MIS solver
     solver = MaximalIndependentSetSolver(disk, memory_size=200, block_size=50)

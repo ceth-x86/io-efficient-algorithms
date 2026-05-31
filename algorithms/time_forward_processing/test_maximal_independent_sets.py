@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from algorithms.time_forward_processing.maximal_independent_sets import Graph, MaximalIndependentSetSolver, TimeForwardProcessor
 from io_simulator import IOSimulator, VirtualDisk
@@ -69,7 +69,7 @@ class TestTimeForwardProcessor:
     def disk_simulator(self) -> IOSimulator:
         """Create disk simulator for testing."""
         vd = VirtualDisk(size=10000)
-        return IOSimulator(vd, block_size=50, memory_size=200)
+        return IOSimulator(vd, block_size=50, cache_memory_size=200)
 
     @pytest.fixture
     def processor(self, disk_simulator: IOSimulator) -> TimeForwardProcessor:
@@ -113,7 +113,7 @@ class TestMaximalIndependentSetSolver:
     def disk_simulator(self) -> IOSimulator:
         """Create disk simulator for testing."""
         vd = VirtualDisk(size=10000)
-        return IOSimulator(vd, block_size=50, memory_size=200)
+        return IOSimulator(vd, block_size=50, cache_memory_size=200)
 
     @pytest.fixture
     def solver(self, disk_simulator: IOSimulator) -> MaximalIndependentSetSolver:

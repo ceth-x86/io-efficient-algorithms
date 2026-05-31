@@ -253,7 +253,7 @@ if __name__ == "__main__":
     # Create large disk for priority queue storage
     from io_simulator import VirtualDisk
     vd = VirtualDisk(size=50000)
-    disk = IOSimulator(vd, block_size=50, memory_size=200)
+    disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
 
     # Create priority queue with phase size = M/4 = 50
     pq = ExternalPriorityQueue(disk, memory_size=200, block_size=50, degree=8)
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     # Test mixed operations
     print("\n\nTesting mixed insert/extract operations...")  # noqa: T201
     vd2 = VirtualDisk(size=50000)
-    disk2 = IOSimulator(vd2, block_size=50, memory_size=200)
+    disk2 = IOSimulator(vd2, block_size=50, cache_memory_size=200)
     pq2 = ExternalPriorityQueue(disk2, memory_size=200, block_size=50, degree=8)
 
     random.seed(42)

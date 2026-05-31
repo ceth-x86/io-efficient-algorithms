@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from algorithms.searching.priority_queue.priority_queue import ExternalPriorityQueue
 from io_simulator import IOSimulator, VirtualDisk
@@ -17,7 +17,7 @@ class TestExternalPriorityQueue:
     def disk_simulator(self) -> IOSimulator:
         """Create a large disk simulator for priority queue storage."""
         vd = VirtualDisk(size=50000)
-        return IOSimulator(vd, block_size=50, memory_size=200)
+        return IOSimulator(vd, block_size=50, cache_memory_size=200)
 
     @pytest.fixture
     def priority_queue(self, disk_simulator: IOSimulator) -> ExternalPriorityQueue:

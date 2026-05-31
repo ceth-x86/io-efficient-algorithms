@@ -89,7 +89,7 @@ def main():
     # Initialize Virtual Disk and Simulator
     vd = VirtualDisk(size=5 * 10**6)
     sim = IOSimulator(
-        vd, block_size=block_size_elements, memory_size=memory_size_elements
+        vd, block_size=block_size_elements, cache_memory_size=memory_size_elements
     )
 
     print("Writing input list to virtual disk...")

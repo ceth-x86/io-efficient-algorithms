@@ -205,7 +205,7 @@ if __name__ == "__main__":
     from io_simulator import VirtualDisk
     vd = VirtualDisk(size=len(test_array))
     vd.disk = list(test_array)
-    disk = IOSimulator(vd, block_size=2, memory_size=4)
+    disk = IOSimulator(vd, block_size=2, cache_memory_size=4)
     result, io_count = external_merge_sort(disk, len(test_array))
 
     expected = np.sort(test_array)
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 
     vd2 = VirtualDisk(size=n)
     vd2.disk = list(test_array)
-    disk = IOSimulator(vd2, block_size=4, memory_size=8)
+    disk = IOSimulator(vd2, block_size=4, cache_memory_size=8)
     result, io_count = external_merge_sort(disk, n)
 
     expected = np.sort(test_array)

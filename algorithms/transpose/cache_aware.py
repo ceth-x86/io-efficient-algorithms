@@ -115,7 +115,7 @@ if __name__ == "__main__":
     from io_simulator import VirtualDisk
     vd = VirtualDisk(size=16)
     vd.disk = list(A.flatten())
-    disk = IOSimulator(vd, block_size=4, memory_size=64)
+    disk = IOSimulator(vd, block_size=4, cache_memory_size=64)
     AT_flat, io_count = transpose_cache_aware(disk, 4, 4)
 
     # Reshape back to matrix

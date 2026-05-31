@@ -7,7 +7,16 @@ from io_simulator import VirtualFile
 def external_sort(sim, dm, vf_in, key_index, M):
     """
     Sorts a VirtualFile using External Merge Sort in the simulator.
-    M is the maximum number of records allowed in memory.
+
+    Args:
+        sim (IOSimulator): The simulator handling I/O operations and caching.
+        dm (VirtualDisk): The virtual disk used for temp file allocations.
+        vf_in (VirtualFile): The input virtual file containing unsorted records.
+        key_index (int): The index in the record to sort by.
+        M (int): Maximum number of records allowed in memory.
+
+    Returns:
+        VirtualFile: A new virtual file containing the sorted records.
     """
     if vf_in.size == 0:
         return VirtualFile(sim, 0, vf_in.record_size)

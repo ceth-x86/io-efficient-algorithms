@@ -30,7 +30,7 @@ class TestVirtualDisk(unittest.TestCase):
 class TestVirtualFile(unittest.TestCase):
     def test_file_lifecycle_and_io(self):
         vd = VirtualDisk(size=200)
-        sim = IOSimulator(vd, block_size=10, memory_size=50)
+        sim = IOSimulator(vd, block_size=10, cache_memory_size=50)
         
         vf1 = VirtualFile(sim, size=10, record_size=3) # requires 30 elements
         self.assertEqual(vf1.start_idx, 0)
@@ -50,7 +50,7 @@ class TestVirtualFile(unittest.TestCase):
 class TestVirtualMatrix(unittest.TestCase):
     def test_matrix_operations(self):
         vd = VirtualDisk(size=100)
-        sim = IOSimulator(vd, block_size=10, memory_size=50)
+        sim = IOSimulator(vd, block_size=10, cache_memory_size=50)
         
         # 3x4 matrix = 12 elements
         mat = VirtualMatrix(sim, rows=3, cols=4)
@@ -88,7 +88,7 @@ class TestDiskBTree(unittest.TestCase):
     def test_btree_insertion_and_search(self):
         vd = VirtualDisk(size=1000)
         # Block size = 9 elements -> max_keys = (9 - 3) // 2 = 3. t = 2 (2-3 Tree)
-        sim = IOSimulator(vd, block_size=9, memory_size=90) # cache limit = 10 blocks
+        sim = IOSimulator(vd, block_size=9, cache_memory_size=90) # cache limit = 10 blocks
         
         btree = DiskBTree(sim)
         
@@ -131,7 +131,7 @@ class TestDiskBTree(unittest.TestCase):
 class TestIOSimulatorCache(unittest.TestCase):
     def test_lru_caching(self):
         vd = VirtualDisk(size=100)
-        sim = IOSimulator(vd, block_size=10, memory_size=30) # memory_limit = 3 blocks
+        sim = IOSimulator(vd, block_size=10, cache_memory_size=30) # memory_limit = 3 blocks
         
         self.assertEqual(sim.io_count, 0)
         
@@ -160,6 +160,30 @@ class TestIOSimulatorCache(unittest.TestCase):
         self.assertEqual(vd.disk[15], 100)
         self.assertEqual(vd.disk[25], 200)
         self.assertEqual(vd.disk[35], 300)
+
+    def test_measure_io_context_manager(self):
+        vd = VirtualDisk(size=100)
+        sim = IOSimulator(vd, block_size=10, cache_memory_size=30)
+        
+        # Initially 0 I/O
+        self.assertEqual(sim.io_count, 0)
+        
+        with sim.measure_io() as measurement:
+            sim.read_element(5)   # block 0 read (1 I/O)
+            sim.read_element(15)  # block 1 read (1 I/O)
+            
+        self.assertEqual(measurement.io_count, 2)
+        self.assertEqual(sim.io_count, 2)
+        
+        # Test nested / independent measure_io blocks
+        with sim.measure_io() as measure_outer:
+            sim.read_element(25)  # block 2 read (1 I/O)
+            with sim.measure_io() as measure_inner:
+                sim.read_element(35)  # block 3 read (1 I/O)
+                
+        self.assertEqual(measure_inner.io_count, 1)
+        self.assertEqual(measure_outer.io_count, 2)
+        self.assertEqual(sim.io_count, 4)
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from algorithms.transpose.cache_aware import transpose_cache_aware
 from io_simulator import IOSimulator, VirtualDisk
@@ -14,7 +14,7 @@ def create_simulator_from_array(arr: np.ndarray, block_size: int, memory_size: i
     flat = arr.flatten()
     vd = VirtualDisk(size=len(flat))
     vd.disk = list(flat)
-    return IOSimulator(vd, block_size, memory_size)
+    return IOSimulator(vd, block_size, cache_memory_size=memory_size)
 
 
 class TestTransposeCacheAware:

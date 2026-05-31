@@ -90,7 +90,7 @@ records, expected_ranks = generate_random_linked_list(100)
 
 # Initialize simulator with VirtualDisk
 vd = VirtualDisk(size=10000)
-sim = IOSimulator(vd, block_size=9, memory_size=150)
+sim = IOSimulator(vd, block_size=9, cache_memory_size=150)
 
 # Write input list as VirtualFile records
 vf_in = VirtualFile(sim, 100, record_size=3)
@@ -117,7 +117,7 @@ from algorithms.transpose import transpose_cache_aware
 # Initialize I/O simulator and flat storage representing a 4x4 matrix
 vd = VirtualDisk(size=16)
 vd.disk = list(np.arange(16))
-simulator = IOSimulator(vd, block_size=2, memory_size=8)
+simulator = IOSimulator(vd, block_size=2, cache_memory_size=8)
 
 # Perform cache-aware transpose
 result, io_count = transpose_cache_aware(simulator, 4, 4)
@@ -132,7 +132,7 @@ from algorithms.searching import BTree
 
 # Setup external storage
 vd = VirtualDisk(size=10000)
-disk = IOSimulator(vd, block_size=50, memory_size=200)
+disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
 
 # Create B-tree
 btree = BTree(disk, d_min=3)
@@ -152,7 +152,7 @@ from algorithms.searching import BufferTree
 
 # Setup larger external storage
 vd = VirtualDisk(size=50000)
-disk = IOSimulator(vd, block_size=50, memory_size=200)
+disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
 
 # Create buffer tree for batch processing
 buffer_tree = BufferTree(disk, memory_size=200, block_size=50, degree=8)
@@ -181,7 +181,7 @@ from algorithms.searching import ExternalPriorityQueue
 
 # Setup external storage
 vd = VirtualDisk(size=50000)
-disk = IOSimulator(vd, block_size=50, memory_size=200)
+disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
 
 # Create priority queue
 pq = ExternalPriorityQueue(disk, memory_size=200, block_size=50, degree=8)
@@ -212,7 +212,7 @@ from algorithms.time_forward_processing import Graph, MaximalIndependentSetSolve
 
 # Setup external memory
 vd = VirtualDisk(size=10000)
-disk = IOSimulator(vd, block_size=50, memory_size=200)
+disk = IOSimulator(vd, block_size=50, cache_memory_size=200)
 solver = MaximalIndependentSetSolver(disk)
 
 # Create path graph: 0-1-2-3-4
