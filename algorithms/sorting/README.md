@@ -26,6 +26,20 @@ Our implementation uses an **optimal k-way external merge sort** algorithm:
 - **Recursive approach**: Handles arbitrarily large datasets
 - **Stable sorting**: Preserves the relative order of equal elements
 
+### In-place Partition Sort
+
+For scenarios where additional disk space is constrained, we implement **In-place Partition Sort** (applicable when array elements are in a known range $[1, K]$):
+
+1. **Range Division**: Divide the value range $[1, K]$ into $d = M/B$ subranges.
+2. **Boundary Pre-calculation**: Scan the array to count elements in each subrange and compute partition starting offsets.
+3. **Buffer Allocation**: Keep one buffer of size $B$ in RAM for each of the $d$ subranges.
+4. **Permutation (Swapping)**: Swap incorrectly positioned elements entirely in RAM. When a buffer fills up with sorted elements, flush it to disk and load the next block for that subrange.
+5. **Recursion**: Recursively sort each partition on disk.
+
+Since all intermediate swaps occur in RAM, this algorithm runs in-place without allocating any extra disk space.
+
+* **Complexity**: $O(\frac{N}{B} \log_{M/B} \frac{K}{B})$ I/Os.
+
 ## Theoretical Analysis
 
 ### I/O Complexity
@@ -107,10 +121,12 @@ This achieves **O(n log k)** merge complexity instead of O(n k) for naive approa
 
 ### Basic Usage
 
+#### External Merge Sort
+
 ```python
 import numpy as np
 from io_simulator import IOSimulator, VirtualDisk
-from algorithms.sorting.external_merge_sort import external_merge_sort
+from algorithms.sorting import external_merge_sort
 
 # Create test data
 data = np.array([64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42])
@@ -128,12 +144,39 @@ print(f"Sorted: {sorted_result}")
 print(f"I/O operations: {io_count}")
 ```
 
+#### In-place Partition Sort
+
+```python
+from io_simulator import IOSimulator, VirtualDisk
+from algorithms.sorting import in_place_sort
+
+# Create test data with elements in range [1, 3]
+data = [2, 1, 3, 2, 1, 3, 2, 1]
+
+# Initialize I/O simulator
+vd = VirtualDisk(size=1000)
+sim = IOSimulator(vd, block_size=2, cache_memory_size=10)
+
+# Write array data at start index 100 on disk
+start_idx = 100
+for i, val in enumerate(data):
+    sim.write_element(start_idx + i, val)
+
+# Sort in-place with M = 4
+in_place_sort(sim, start_idx, len(data), K=3, M=4)
+sim.flush_memory()
+
+# Read sorted data directly from virtual disk
+sorted_data = [vd.disk[start_idx + i] for i in range(len(data))]
+print(f"Sorted In-place: {sorted_data}")
+```
+
 ### Performance Testing
 
 ```python
 import numpy as np
 from io_simulator import IOSimulator, VirtualDisk
-from algorithms.sorting.external_merge_sort import external_merge_sort
+from algorithms.sorting import external_merge_sort
 
 # Test different configurations
 configurations = [
@@ -176,7 +219,8 @@ Our implementation includes extensive tests covering:
 
 ```bash
 # Run tests with pytest
-.venv/bin/pytest tests/test_external_merge_sort.py -v
+.venv/bin/pytest algorithms/sorting/merge_sort/test_external_merge_sort.py -v
+.venv/bin/pytest algorithms/sorting/partition_sort/test_in_place_partition_sort.py -v
 ```
 
 ### Test Results

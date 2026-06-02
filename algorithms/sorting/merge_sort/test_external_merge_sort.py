@@ -4,9 +4,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
+# Add project root to sys.path
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
-from algorithms.sorting.external_merge_sort import external_merge_sort
+from algorithms.sorting.merge_sort.external_merge_sort import external_merge_sort
 from io_simulator import IOSimulator, VirtualDisk
 
 

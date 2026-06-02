@@ -3,10 +3,10 @@ from pathlib import Path
 
 import numpy as np
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
+# Add project root to sys.path
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from io_simulator.io_simulator import IOSimulator
-
 
 def external_merge_sort(disk: IOSimulator, array_size: int) -> tuple[np.ndarray, int]:
     """
@@ -193,47 +193,3 @@ def _k_way_merge(disk: IOSimulator, parts: list[tuple[int, int]], start: int, en
 
     # Force flush to ensure all writes are committed
     disk.flush_memory()
-
-
-if __name__ == "__main__":
-    print("Testing simplified external memory sorting...")
-
-    # Test with a simple array
-    test_array = np.array([5, 1, 3, 2, 8, 4, 7, 6])
-    print(f"Simple test: {test_array}")
-
-    from io_simulator import VirtualDisk
-    vd = VirtualDisk(size=len(test_array))
-    vd.disk = list(test_array)
-    disk = IOSimulator(vd, block_size=2, cache_memory_size=4)
-    result, io_count = external_merge_sort(disk, len(test_array))
-
-    expected = np.sort(test_array)
-    print(f"Result: {result}")
-    print(f"Expected: {expected}")
-    print(f"I/O count: {io_count}")
-
-    if np.array_equal(result, expected):
-        print("✓ Simple test passed!")
-    else:
-        print("✗ Simple test failed!")
-
-    print()
-
-    # Test with random array
-    n = 16
-    test_array = np.random.randint(0, 50, n)
-    print(f"Random test: {test_array}")
-
-    vd2 = VirtualDisk(size=n)
-    vd2.disk = list(test_array)
-    disk = IOSimulator(vd2, block_size=4, cache_memory_size=8)
-    result, io_count = external_merge_sort(disk, n)
-
-    expected = np.sort(test_array)
-    if np.array_equal(result, expected):
-        print(f"✓ Random test passed! I/O count: {io_count}")
-    else:
-        print("✗ Random test failed!")
-        print(f"Result: {result}")
-        print(f"Expected: {expected}")

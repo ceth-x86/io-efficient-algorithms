@@ -8,13 +8,17 @@ This repository contains implementations of tasks and algorithms from the Course
 
 - **External Memory List Ranking**: Computes the ranks of nodes in a linked list using independent set reduction and recursive compaction.
 - **Matrix Transposition**: Cache-aware and cache-oblivious algorithms for transposing large square matrices.
-- **External Memory Sorting**: External merge sort algorithm for sorting datasets larger than memory.
+- **External Memory Sorting**: Two distinct paradigms for sorting data:
+  * **External Merge Sort (Merge-based, Not In-place)**: Splits the array into chunks of size $M$, sorts them in RAM, writes them to disk, and merges them using a min-heap. Requires $O(N)$ auxiliary disk space.
+  * **In-place Partition Sort (Distribution-based, In-place)**: Splits the value range $[1, K]$ into $d = M/B$ subranges, counts partition bounds via a scan, and then partitions elements in-place on disk using RAM buffers and swaps. Requires $O(1)$ auxiliary disk space, but requires elements to be in a bounded range $[1, K]$.
 - **B-Trees**: External memory search trees for efficient dictionary operations.
 - **Buffer Trees**: Advanced batched processing trees achieving the optimal sorting bound.
 - **Priority Queues**: Phase-based priority queues achieving optimal I/O complexity for batch operations.
 - **Time-Forward Processing**: I/O-efficient algorithms for computing local functions on DAGs.
 - **Maximal Independent Sets**: Graph algorithms using time-forward processing for optimal I/O complexity.
 - **External Memory Stack**: A LIFO data structure utilizing a 2B RAM hysteresis buffer to achieve O(1/B) amortized I/O complexity.
+- **External Memory Linked List**: A block-grouped linked list maintaining block sizes between B/2 and 3B/2 to achieve optimal O(1) amortized point operations and O(K/B) sequential traversal I/O complexity.
+- **Range Sum Queries**: Algorithms for answering range sum queries in static online (naive & block prefix sums), static offline (sort-merge-join), and dynamic offline (segment tree decomposition) modes.
 
 ## Algorithm Documentation
 
@@ -26,11 +30,13 @@ This repository contains implementations of tasks and algorithms from the Course
   - **[Buffer Trees](algorithms/searching/buffer_tree/README.md)**
   - **[Priority Queues](algorithms/searching/priority_queue/README.md)**
 - **[Time-Forward Processing](algorithms/time_forward_processing/README.md)**
+- **[Range Sum Queries](algorithms/range_sum_queries/README.md)**
 - **[External Memory Primitives](external_memory_primitives/)**: Root package containing:
   - **[External Merge Sort](external_memory_primitives/external_sort.py)**
   - **[Merge Join](external_memory_primitives/merge_join.py)**
 - **[External Memory Data Structures](data_structures/)**:
   - **[External Stack](data_structures/stack/README.md)**
+  - **[External Linked List](data_structures/linked_list/README.md)**
 
 ## I/O Model and Framework
 
@@ -58,10 +64,12 @@ The core simulation framework, `IOSimulator`, models this hierarchy:
 │   │   ├── btree/                    # Classic external B-tree
 │   │   ├── buffer_tree/              # Buffer tree for batch operations
 │   │   └── priority_queue/           # External phase-based priority queue
+│   ├── range_sum_queries/            # Range sum queries (static/dynamic, online/offline)
 │   ├── sorting/                      # External memory sorting algorithms
 │   ├── time_forward_processing/      # Time-forward graph processing framework
 │   └── transpose/                    # Matrix transposition algorithms
 ├── data_structures/                  # Fundamental external memory structures
+│   ├── linked_list/                  # External block-grouped linked list
 │   └── stack/                        # External stack with hysteresis buffering
 ├── external_memory_primitives/       # Root package with external sort & join primitives
 └── io_simulator/                     # Core simulation and caching framework
@@ -257,6 +265,52 @@ val = stack.pop()  # 20
 stack.close()
 ```
 
+#### External Memory Linked List
+
+```python
+from io_simulator import IOSimulator, VirtualDisk
+from data_structures.linked_list import ExternalLinkedList
+
+# Setup external storage
+vd = VirtualDisk(size=1000)
+sim = IOSimulator(vd, block_size=4, cache_memory_size=40)
+
+# Create linked list
+lst = ExternalLinkedList(sim)
+
+# Operations
+p1 = lst.insert(None, 10)     # Insert 10 at head
+p2 = lst.insert(p1, 20)       # Insert 20 after 10
+val = lst.lookup(p2)          # 20
+elements = lst.traverse(p1)   # [10, 20]
+lst.remove(p2)                # Remove 20
+lst.close()
+```
+
+#### Range Sum Queries (Dynamic Offline)
+
+```python
+from io_simulator import IOSimulator, VirtualDisk, VirtualFile
+from algorithms.range_sum_queries import dynamic_offline_rsq
+
+# Setup external storage
+vd = VirtualDisk(size=1000)
+sim = IOSimulator(vd, block_size=4, cache_memory_size=40)
+
+# Operations: [time_id, op_type, arg1, arg2]
+# t0: a[2] += 5 (relative update)
+# t1: query(0, 4)
+ops_vf = VirtualFile(sim, 2, 4)
+ops_vf.write_record(0, [0, 0, 2, 5])
+ops_vf.write_record(1, [1, 1, 0, 4])
+
+# Solve range sum queries offline with M=4
+results_vf = dynamic_offline_rsq(sim, N=8, ops_vf=ops_vf, M=4)
+res = results_vf.read_record(0)  # [0, 5] (query_id 0, sum 5)
+ops_vf.close()
+results_vf.close()
+```
+
 ## Running Example Demonstrations
 
 You can execute each algorithm implementation file directly to see its demo run:
@@ -272,7 +326,10 @@ You can execute each algorithm implementation file directly to see its demo run:
 .venv/bin/python algorithms/transpose/cache_oblivious.py
 
 # Run External Memory Sorting example
-.venv/bin/python algorithms/sorting/external_merge_sort.py
+.venv/bin/python algorithms/sorting/merge_sort/external_merge_sort.py
+
+# Run In-place Partition Sort example
+.venv/bin/python algorithms/sorting/partition_sort/examples/in_place_sort_example.py
 
 # Run Priority Queue example
 .venv/bin/python algorithms/searching/priority_queue/priority_queue.py
@@ -282,6 +339,12 @@ You can execute each algorithm implementation file directly to see its demo run:
 
 # Run External Memory Stack example
 .venv/bin/python data_structures/stack/examples/stack_example.py
+
+# Run External Memory Linked List example
+.venv/bin/python data_structures/linked_list/examples/linked_list_example.py
+
+# Run Range Sum Queries example
+.venv/bin/python algorithms/range_sum_queries/examples/range_sum_example.py
 
 # Run External Merge Sort Primitives example
 .venv/bin/python external_memory_primitives/examples/sorting_example.py
@@ -303,12 +366,15 @@ To run the complete test suite, use pytest:
 .venv/bin/pytest algorithms/searching/btree/test_btree.py
 .venv/bin/pytest algorithms/searching/buffer_tree/test_buffer_tree.py
 .venv/bin/pytest algorithms/searching/priority_queue/test_priority_queue.py
-.venv/bin/pytest algorithms/sorting/test_external_merge_sort.py
+.venv/bin/pytest algorithms/sorting/merge_sort/test_external_merge_sort.py
+.venv/bin/pytest algorithms/sorting/partition_sort/test_in_place_partition_sort.py
 .venv/bin/pytest algorithms/time_forward_processing/test_maximal_independent_sets.py
 .venv/bin/pytest algorithms/transpose/test_transpose_cache_aware.py
 .venv/bin/pytest algorithms/transpose/test_transpose_cache_oblivious.py
 .venv/bin/pytest io_simulator/test_simulator.py
 .venv/bin/pytest data_structures/stack/test_stack.py
+.venv/bin/pytest data_structures/linked_list/test_linked_list.py
+.venv/bin/pytest algorithms/range_sum_queries/test_range_sum_queries.py
 .venv/bin/pytest external_memory_primitives/test_external_sort.py
 .venv/bin/pytest external_memory_primitives/test_merge_join.py
 ```
